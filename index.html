@@ -1,1 +1,1946 @@
-yo
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GCSE Maths (Foundation) — Number Topic Preview (N7–N9)</title>
+<style>
+  /* SECTION: Styles
+     - Layout + typography
+     - Question card UI
+     - Input widgets (including drag-and-drop ordering and standard form EXP entry)
+     NOTE: Keep classnames/IDs stable: the JS relies on many of them.
+  */
+  :root{
+    --ink:#0f172a; --muted:#6b7280; --accent:#2563eb; --bg:#ffffff; --border:#e5e7eb;
+    --green:#16a34a; --orange:#f59e0b; --red:#dc2626;
+    --fbar:1px; /* ultra-thin fraction bar */
+  }
+
+  html,body{
+    margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font:19px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  }
+
+  header{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border)}
+  main{max-width:1040px;margin:1.2rem auto 4rem;padding:0 1rem}
+
+  /* top control bar (simple, no tabs) */
+  .bar{
+    display:flex;gap:.65rem;align-items:center;flex-wrap:wrap;
+    padding:.75rem .9rem
+  }
+  .bar .group{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+  .bar label{font-weight:900;color:#111827;font-size:1rem}
+  select, input[type="text"], input[type="number"]{
+    padding:.55rem .65rem;border:1px solid var(--border);border-radius:.6rem;min-width:160px;
+    background:#fff;color:var(--ink);font-size:1rem
+  }
+  input[type="text"], input[type="number"]{min-width:160px}
+  .primary{
+    background:var(--accent);color:#fff;border:1px solid var(--accent);
+    border-radius:.65rem;padding:.6rem 1.05rem;cursor:pointer;font-weight:900;font-size:1rem
+  }
+  .ghost{
+    background:#fff;color:var(--ink);border:1px solid var(--border);
+    border-radius:.65rem;padding:.6rem 1.05rem;cursor:pointer;font-weight:900;font-size:1rem
+  }
+  .muted{color:var(--muted);font-size:1rem}
+  .spacer{flex:1}
+  .actions{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+
+  /* question panel */
+  .qpanel{border:1px solid var(--border);border-radius:1rem;overflow:hidden;margin-top:1rem;
+    box-shadow:0 1px 0 rgba(0,0,0,.03)}
+  .qhead{
+    padding:1rem 1.05rem;border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#fbfdff,#f8fafc);
+    display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap
+  }
+  .qhead h3{margin:.1rem 0;font-size:1.2rem}
+  .qbody{padding:1.1rem 1.05rem}
+  .badge{display:inline-block;margin-left:.55rem;padding:.08rem .5rem;border:1px solid var(--border);
+    border-radius:8px;background:#eef2ff;font-size:.95rem}
+  .nc-tag{font-weight:900;text-transform:uppercase;letter-spacing:.02em;font-size:.95rem}
+  .nc{color:#15803d}
+  .calc{color:#1d4ed8}
+
+  /* question lines */
+  .item{padding:.6rem .1rem;border-bottom:1px dashed rgba(229,231,235,.9)}
+  .item:last-child{border-bottom:none}
+  .line{
+    display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap;
+  }
+  .qtext{flex:1;min-width:280px}
+  .endmark{margin-left:.4rem;font-weight:900;color:#334155}
+
+  .hlDigit{background:rgba(245,158,11,.25);border:1px solid rgba(245,158,11,.45);border-radius:.25rem;padding:0 .2rem;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+  .sfhint{font-size:.85rem;color:#64748b;margin-top:.35rem;max-width:520px}
+
+  /* inputs - feedback highlighting */
+  .ok{outline:2px solid rgba(22,163,74,.35); border-color:rgba(22,163,74,.55)!important}
+  .bad{outline:2px solid rgba(220,38,38,.28); border-color:rgba(220,38,38,.55)!important}
+
+  /* fraction widget */
+  .frac{display:inline-grid;grid-template-rows:auto 0 auto;row-gap:0;align-items:center;justify-items:center;line-height:0;vertical-align:middle}
+  .frac input{
+    width:92px;text-align:center;border:1px solid var(--border);border-radius:.45rem;padding:.45rem .5rem;margin:0;
+    appearance:textfield;font-size:1rem;min-width:0
+  }
+  .frac input::-webkit-outer-spin-button,.frac input::-webkit-inner-spin-button{appearance:none;margin:0}
+  .frac .bar{width:92px;height:0;border-top:var(--fbar) solid #111;margin:16px 0 0 0}
+  .frac input:last-child{margin-top:-2px}
+
+  /* pair/triple widgets */
+  .twobox, .threebox, .sfbox{
+    display:inline-flex;gap:.5rem;align-items:center;flex-wrap:wrap
+  }
+  .twobox input, .threebox input, .sfbox input{
+    min-width:120px
+  }
+  .mini{min-width:110px!important}
+  .tiny{min-width:90px!important}
+
+
+  /* standard form input (no ^) */
+  .sfTen{font-weight:900}
+  .sfexp{
+    vertical-align:super;
+    font-size:.85rem;
+    min-width:72px!important;
+    width:72px;
+    padding:.22rem .3rem;
+  }
+
+  /* prime factorisation input (EXP toggles superscripts) */
+  .pfbox{
+    min-height:44px;
+    border:1px solid var(--border);
+    border-radius:.55rem;
+    padding:.45rem .55rem;
+    background:#fff;
+    font-weight:850;
+    letter-spacing:.01em;
+    line-height:1.2;
+  }
+  .pfbox sup{font-size:.75em;vertical-align:super}
+  .pfbox .mul{opacity:.9;padding:0 .12rem}
+  .kbtn.on{
+    background:#2563eb;
+    border-color:#2563eb;
+    color:#fff;
+  }
+
+  /* prime factors keypad */
+  .pfwrap{display:flex;flex-direction:column;gap:.5rem;min-width:320px}
+  .keypad{display:flex;gap:.45rem;flex-wrap:wrap}
+  .kbtn{
+    border:1px solid var(--border);background:#fff;border-radius:.6rem;
+    padding:.4rem .7rem;cursor:pointer;font-weight:900;font-size:1rem
+  }
+  .kbtn:active{transform:translateY(1px)}
+  .kbtn.accent{border-color:rgba(37,99,235,.35);background:#eef2ff}
+
+  /* feedback */
+  .feedback{margin-top:1rem;border:1px solid var(--border);border-radius:.75rem;padding:.85rem 1rem;background:#f8fafc}
+  .feedback.good{background:#ecfdf5;border-color:rgba(22,163,74,.22);color:#065f46}
+  .feedback.bad{background:#fef2f2;border-color:rgba(220,38,38,.22);color:#7f1d1d}
+
+  .mathwrap{display:inline-block;vertical-align:middle}
+
+  /* -------------------- drag ordering widget -------------------- */
+  .drag-order{
+    margin:.6rem 0 .1rem 0;
+    padding:.6rem .65rem;
+    border:1px solid var(--border);
+    border-radius:1rem;
+    background:linear-gradient(180deg,#ffffff,#f8fafc);
+  }
+  .drag-bank, .drag-targets{
+    display:flex;
+    gap:.5rem;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .drag-bank{
+    padding:.5rem;
+    border:1px solid var(--border);
+    border-radius:.85rem;
+    background:#fff;
+  }
+  .drag-targets{
+    margin-top:.55rem;
+    padding:.5rem;
+    border:1px dashed rgba(107,114,128,.35);
+    border-radius:.85rem;
+    background:#f8fafc;
+    min-height:56px;
+  }
+  .dragbox{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:.35rem .65rem;
+    border:1px solid var(--border);
+    border-radius:.7rem;
+    background:#fff;
+    cursor:grab;
+    font-weight:900;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:manipulation;
+  }
+  .dragbox:active{ cursor:grabbing; }
+  .dragbox.dragging{ opacity:.55; }
+  .dragbox.selected{
+    outline:2px solid rgba(37,99,235,.45);
+    border-color:rgba(37,99,235,.55);
+  }
+  .dropbox{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:92px;
+    min-height:46px;
+    padding:.2rem .35rem;
+    border:2px dashed rgba(229,231,235,.95);
+    border-radius:.7rem;
+    background:#fff;
+  }
+  .dropbox.over{
+    border-color:rgba(37,99,235,.65);
+    background:#eff6ff;
+  }
+  .dropbox .dragbox{ cursor:grab; }
+
+  .drag-instr{
+    margin-top:.45rem;
+    color:var(--muted);
+    font-size:1rem;
+  }
+
+  .dragbox math{ font-size:1.05em; }
+
+  /* -------------------- standard form (single box + EXP keypad) -------------------- */
+  .sfwrap{
+    display:flex;
+    flex-direction:column;
+    gap:.55rem;
+    min-width:320px;
+  }
+  .sfinput{
+    padding:.55rem .65rem;
+    border:1px solid var(--border);
+    border-radius:.6rem;
+    background:#fff;
+    color:var(--ink);
+    font-size:1rem;
+    min-width:240px;
+  }
+  .sfhint{
+    color:var(--muted);
+    font-size:1rem;
+  }
+
+  @media (max-width:560px){
+    .dropbox{ min-width:78px; }
+    .sfwrap{ min-width:260px; }
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="group">
+      <label for="topicSel">Topic</label>
+      <select id="topicSel"></select>
+    </div>
+
+    <div class="group">
+      <label for="marksSel">Marks</label>
+      <select id="marksSel">
+        <option value="1">1 mark</option>
+        <option value="2">2 marks</option>
+        <option value="3">3 marks</option>
+        <option value="4">4 marks</option>
+        <option value="5">5 marks</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <label for="calcSel">Paper</label>
+      <select id="calcSel">
+        <option value="noncalc">Non-calculator</option>
+        <option value="calc">Calculator</option>
+      </select>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="actions">
+      <button class="primary" id="regenBtn" type="button">Regenerate numbers</button>
+      <button class="ghost" id="checkBtn" type="button">Check</button>
+      <button class="ghost" id="revealBtn" type="button">Reveal answers</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="preview"></section>
+  <div class="feedback" id="fb" style="display:none"></div>
+</main>
+
+<script>
+/* ============================================================
+   GCSE (Foundation) Number Question Preview Tool (N1–N50)
+   - NO ratio topics.
+   - NO recurring decimals.
+   - Finer-grained topics (each N code is a single narrow topic).
+   - Marks selector gives a question that is worth those marks:
+       higher marks => more steps / more answer boxes / more structure,
+       not just “same question with bigger numbers”.
+   - Calculator mode uses calculator-suitable numbers (messier decimals, awkward divisions),
+     and where needed asks for answers to 2 decimal places.
+   ============================================================ */
+
+// SECTION: File map (searchable)
+// - SECTION: Seeded RNG
+// - SECTION: Formatting helpers (MathML, standard form parsing)
+// - SECTION: Topic list / navigation (TOPICS)
+// - SECTION: Scenario variants (contextVariants)
+// - SECTION: Question parts (partInteger/partNumber/...)
+// - SECTION: Build question card (buildQuestion switch by topic code)
+// - SECTION: Rendering + interaction (tabs, check/reveal, drag ordering)
+// EDIT HERE: Most question content is generated in buildQuestion(topicCode, marksTotal, rng).
+
+// SECTION: Seeded RNG (deterministic per regeneration seed)
+function hashToUint32(str){
+  let h = 2166136261 >>> 0;
+  for (let i=0;i<str.length;i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function cryptoSeed(){
+  if (window.crypto && crypto.getRandomValues){
+    const a = new Uint32Array(1);
+    crypto.getRandomValues(a);
+    return a[0] >>> 0;
+  }
+  return (Math.random()*2**32)>>>0;
+}
+function mulberry32(seed){
+  let t = seed >>> 0;
+  return function(){
+    t += 0x6D2B79F5;
+    let x = t;
+    x = Math.imul(x ^ (x >>> 15), x | 1);
+    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeRng(seedLike){
+  const seed = (seedLike===undefined || seedLike===null || seedLike==="")
+    ? cryptoSeed()
+    : (typeof seedLike==="number" ? (seedLike>>>0) : hashToUint32(String(seedLike)));
+  const r = mulberry32(seed);
+  return {
+    seed,
+    float: ()=>r(),
+    int: (min,max)=>{
+      min=Math.ceil(min); max=Math.floor(max);
+      return Math.floor(r()*(max-min+1))+min;
+    },
+    choice: (arr)=>arr[Math.floor(r()*arr.length)],
+    shuffle: (arr)=>{
+      const a=arr.slice();
+      for(let i=a.length-1;i>0;i--){
+        const j=Math.floor(r()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+      }
+      return a;
+    }
+  };
+}
+
+/* -------------------- helpers -------------------- */
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1}
+function lcm(a,b){ return Math.abs(a*b)/gcd(a,b); }
+function roundTo(x, dp){
+  const f = 10**dp;
+  return Math.round((+x + Number.EPSILON)*f)/f;
+}
+function fmt(x, maxDp=6){
+  const n = Number(x);
+  if(!Number.isFinite(n)) return String(x);
+  const s = n.toFixed(maxDp);
+  return s.replace(/\.?0+$/,"");
+}
+function simpFrac(n,d){
+  if(d===0) return {n:NaN,d:NaN};
+  if(d<0){n=-n;d=-d}
+  const g=gcd(n,d);
+  return {n:n/g,d:d/g};
+}
+function fracEq(a,b){
+  const x=simpFrac(a.n,a.d), y=simpFrac(b.n,b.d);
+  return x.n===y.n && x.d===y.d;
+}
+function asNum(v){
+  const s = String(v??"").trim().replace(/,/g,"");
+  if(!s) return NaN;
+  // allow fraction "a/b" in numeric fields
+  if(s.includes("/")){
+    const m = s.match(/^(-?\d+)\s*\/\s*(-?\d+)$/);
+    if(!m) return NaN;
+    const n=Number(m[1]), d=Number(m[2]);
+    if(!Number.isFinite(n)||!Number.isFinite(d)||d===0) return NaN;
+    return n/d;
+  }
+  // allow leading +, decimals
+  const x = Number(s);
+  return Number.isFinite(x) ? x : NaN;
+}
+function close(a,b,tol=1e-8){ return Math.abs(a-b) <= tol; }
+
+function parseStandardFormInput(raw){
+  // Accept forms like:
+  // 3.2×10⁵   3.2x10^5   3.2E5   3.2×10-5  (Unicode superscripts supported)
+  const s0 = String(raw ?? "").trim();
+  if(!s0) return null;
+
+  // Normalise
+  let s = s0.replace(/\s+/g,"");
+  s = s.replace(/×/g,"x").replace(/⋅/g,"x").replace(/·/g,"x");
+  s = s.replace(/EXP/ig,"E");
+  s = s.replace(/[−–—]/g,"-"); // unicode minus/dashes
+
+  // Convert Unicode superscripts to normal digits/sign
+  const supMap = {"⁰":"0","¹":"1","²":"2","³":"3","⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9","⁻":"-","⁺":"+"};
+  s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]/g, ch => supMap[ch] ?? ch);
+
+  // Standardise multiply symbol
+  s = s.replace(/X/g,"x");
+
+  // Pattern A: mantissa E exponent
+  let m = s.match(/^([+-]?\d*\.?\d+)E([+-]?\d+)$/i);
+  if(m){
+    const mantissa = Number(m[1]);
+    const exp = parseInt(m[2],10);
+    if(!Number.isFinite(mantissa) || !Number.isFinite(exp)) return null;
+    return {mantissa, exp, value: mantissa * Math.pow(10, exp)};
+  }
+
+  // Pattern B: mantissa × 10 ^ exponent  (caret optional, exponent may follow immediately after 10)
+  m = s.match(/^([+-]?\d*\.?\d+)(?:x|\*)10\^?([+-]?\d+)$/i);
+  if(m){
+    const mantissa = Number(m[1]);
+    const exp = parseInt(m[2],10);
+    if(!Number.isFinite(mantissa) || !Number.isFinite(exp)) return null;
+    return {mantissa, exp, value: mantissa * Math.pow(10, exp)};
+  }
+
+  return null;
+}
+
+
+/* -------------------- MathML helpers -------------------- */
+const MNS = `http://www.w3.org/1998/Math/MathML`;
+function mfrac(n,d){
+  return `<span class="mathwrap"><math xmlns="${MNS}" display="inline"><mfrac><mn>${n}</mn><mn>${d}</mn></mfrac></math></span>`;
+}
+function msup(base, exp){
+  const baseNode = Number.isFinite(+base) ? `<mn>${base}</mn>` : `<mi>${String(base)}</mi>`;
+  return `<span class="mathwrap"><math xmlns="${MNS}" display="inline"><msup>${baseNode}<mn>${exp}</mn></msup></math></span>`;
+}
+
+// SECTION: Topic list / tab navigation
+// EDIT HERE: To add/remove topics or change the tab label, edit the TOPICS array below.
+// NOTE: Each `code` must have a corresponding `case "CODE"` in the buildQuestion() switch.
+/* SPLITMERGE:TOPICS-START */
+const TOPICS = [
+  {code:"N7",  name:"Multiplication (integers & decimals)"},
+  {code:"N8",  name:"Division (integers & decimals)"},
+  {code:"N9",  name:"Negative numbers (mixed operations)"}
+];
+/* SPLITMERGE:TOPICS-END */
+
+/* -------------------- number pickers -------------------- */
+function pickDec(rng, dp){
+  // dp digits after decimal, always non-trailing safe
+  const m = 10**dp;
+  return rng.int(1*m, 999*m)/m;
+}
+function pickMoney(rng, isCalc){
+  // money prices: noncalc => 2 dp but friendly; calc => awkward 2 dp
+  const pennies = isCalc ? rng.int(105, 2999) : rng.choice([125,150,175,200,225,250,275,300,350,400,450,500,550,600,650,700,750,800,900,1000,1200,1500]);
+  return pennies/100;
+}
+function pickNiceInt(rng, min=2, max=40){ return rng.int(min, max); }
+function pickBigInt(rng){ return rng.int(1200, 98000); }
+
+function pickPercent(rng, allowOneDp=false){
+  // GCSE-friendly percentages (no recurring). If allowOneDp, may return values like 12.5 or 7.5.
+  const ints = [1,2,3,4,5,6,8,10,12,15,18,20,25,30,35,40,45,50,60,75,80,90];
+  const oneDp = [2.5,7.5,12.5,17.5,22.5,37.5,62.5];
+  return allowOneDp ? rng.choice(ints.concat(oneDp)) : rng.choice(ints);
+}
+
+/* -------------------- part constructors -------------------- */
+function partNumber(id, textHtml, marks, value){
+  return {marks, textHtml, input:{kind:"number", id}, answer:{type:"number", value}};
+}
+function partInteger(id, textHtml, marks, value){
+  return {marks, textHtml, input:{kind:"integer", id}, answer:{type:"number", value}};
+}
+function partFraction(id, textHtml, marks, frac){
+  return {marks, textHtml, input:{kind:"fraction", id}, answer:{type:"fraction", value: frac}};
+}
+function partPair(id, textHtml, marks, pair, opts={}){
+  return {marks, textHtml, input:{kind:(opts.kind||"pair"), id, placeholders:opts.placeholders, labels:opts.labels}, answer:{type:"pair", value: pair}};
+}
+function partStdForm(id, textHtml, marks, val, nMaybe){
+  // val can be:
+  //  - the actual numeric value to be written in standard form, OR
+  //  - (A, n) where val is A and nMaybe is the power of 10.
+  const num = (typeof nMaybe !== "undefined")
+    ? (Number(val) * (10**Number(nMaybe)))
+    : Number(val);
+  return {marks, textHtml, input:{kind:"standardForm", id}, answer:{type:"standardForm", value: num}};
+}
+function partOrder(id, textHtml, marks, correctTokens){
+  return {marks, textHtml, input:{kind:"order", id}, answer:{type:"order", value: correctTokens}};
+}
+function partPrimeFactors(id, textHtml, marks, primeMap){
+  // primeMap: {2:3, 3:1, ...}
+  return {marks, textHtml, input:{kind:"primeFactors", id}, answer:{type:"primeFactors", value: primeMap}};
+}
+function partMoney(id, textHtml, marks, value){
+  return {marks, textHtml, input:{kind:"money", id}, answer:{type:"number", value}};
+}
+
+function partSymbol(id, textHtml, marks, value){
+  return {marks, textHtml, input:{kind:"symbol", id}, answer:{type:"symbol", value}};
+}
+
+/* -------------------- prime factor helpers -------------------- */
+function factorise(n){
+  // returns map {p:exp}, n is integer >=2
+  let x = Math.abs(Math.trunc(n));
+  const map = {};
+  let p = 2;
+  while(p*p <= x){
+    while(x % p === 0){
+      map[p] = (map[p]||0) + 1;
+      x = Math.trunc(x/p);
+    }
+    p = (p===2) ? 3 : p+2;
+  }
+  if(x>1) map[x] = (map[x]||0)+1;
+  return map;
+}
+function mapsEqual(a,b){
+  const ka = Object.keys(a).sort();
+  const kb = Object.keys(b).sort();
+  if(ka.length!==kb.length) return false;
+  for(let i=0;i<ka.length;i++){
+    if(ka[i]!==kb[i]) return false;
+    if(a[ka[i]]!==b[kb[i]]) return false;
+  }
+  return true;
+}
+
+// SECTION: Build one question card (topic + mark band)
+// EDIT HERE: Each topic's question generator lives inside the switch(topicCode) below.
+// - Adjust wording/values/answer keys within a topic `case`.
+// - Keep IDs/classnames stable (the UI + checking logic rely on them).
+// - To add a new topic, add it to TOPICS and add a matching case in this switch.
+function buildQuestion(topicCode, marksTotal, paperMode, rng){
+  const isCalc = paperMode === "calc";
+
+  // SECTION: Scenario/context variants (3+ marks only)
+  // These are injected directly into the student-facing prompt text (no separate context label above the question).
+  // CHANGE REQUESTS #5/#6: N5 and N11 contexts are now specific and randomly selected.
+  const contextVariants = (code)=>{
+    switch(code){
+      case "N7":
+      case "N47":
+        return [
+        "A customer is buying items in a local shop.",
+        "A group is buying tickets and snacks at a cinema.",
+        "A charity stall is selling items to raise money."
+        ];
+      case "N46":
+        return [
+        "A cyclist records a distance and the time taken for a journey.",
+        "A driver records a distance and the time taken for a trip.",
+        "A runner records a distance and the time taken for training."
+        ];
+      case "N48":
+        return [
+        "A student uses a timetable to work out times during the day.",
+        "A traveller plans a journey using start times and durations.",
+        "An athlete uses race times and durations to plan a schedule."
+        ];
+      case "N37":
+      case "N38":
+      case "N39":
+      case "N49":
+      case "N50":
+        return [
+        "A scientist writes very large numbers using standard form.",
+        "A lab report uses standard form for very small measurements.",
+        "A computer stores very large and very small values in standard form."
+        ];
+      case "N43":
+      case "N44":
+      case "N45":
+        return [
+        "A technician records a measurement rounded to a stated accuracy.",
+        "A coach records a distance or time rounded to a stated accuracy.",
+        "A science experiment records readings rounded to a stated accuracy."
+        ];
+      // CHANGE REQUEST #6 (N11): Replace vague scenario prompts with specific, realistic contexts.
+      case "N11":
+        return [
+        "A café uses a till that does two steps to work out a bill total.",
+        "A delivery company uses a two-step rule to work out charges for parcels.",
+        "A school club uses a two-step rule to work out how many packs are needed."
+        ];
+      case "N12":
+      case "N13":
+      case "N14":
+      case "N15":
+      case "N16":
+      case "N32":
+        return [
+        "Items are being packed into equal groups.",
+        "A team is arranging equipment evenly.",
+        "A factory is making products in equal batches."
+        ];
+      case "N17":
+      case "N18":
+      case "N19":
+      case "N20":
+      case "N21":
+      case "N22":
+      case "N23":
+      case "N24":
+      case "N25":
+      case "N26":
+      case "N31":
+        return [
+        "A recipe uses fractional amounts of ingredients and portions.",
+        "A DIY job uses fractions to measure, cut and share materials.",
+        "A sports setting uses fractions of a lap or a match."
+        ];
+      // CHANGE REQUEST #5 (N5): Provide specific contexts for addition/subtraction (including negatives).
+      case "N5":
+        return [
+        "A bank account changes with deposits and withdrawals.",
+        "A temperature changes overnight, then changes again during the day.",
+        "A football team tracks points gained and points lost across two matches."
+        ];
+      case "N27":
+      case "N28":
+      case "N29":
+      case "N30":
+      case "N33":
+      case "N34":
+      case "N35":
+      case "N36":
+        return [
+        "A shop is using prices, discounts and offers.",
+        "A charity is tracking amounts towards a target.",
+        "A school is comparing scores and attendance figures."
+        ];
+      default:
+        return [
+        "A student is using numbers from an everyday situation.",
+        "Someone is using numbers to complete a practical task.",
+        "A real-life problem requires interpreting numbers accurately."
+        ];
+    }
+  };
+
+  // helper: create object
+  const Q = (parts)=>{
+    // For 3–5 mark questions, randomly select ONE of three context variants
+    // and prepend it to the prompt. (Maths stays identical; only the setting changes.)
+    if(marksTotal>=3){
+      const leads = contextVariants(topicCode) || [];
+      if(leads.length>=3){
+        const lead = rng.choice(leads);
+        for(const p of parts){
+          if(p && typeof p.textHtml==="string" && p.textHtml.trim()!==""){
+            // Insert the chosen scenario into the question text itself (no separate context line).
+            const original = p.textHtml;
+            const trimmed = original.trimStart();
+            if(trimmed.toLowerCase().startsWith('<p')){
+              const idx = original.toLowerCase().indexOf('<p');
+              const end = original.indexOf('>', idx);
+              if(end !== -1){
+                p.textHtml = original.slice(0, end+1) + lead + ' ' + original.slice(end+1);
+              } else {
+                p.textHtml = lead + ' ' + original;
+              }
+            } else {
+              p.textHtml = lead + ' ' + original;
+            }
+            break;
+          }
+        }
+      }
+    }
+    return {topicCode, marksTotal, paperMode, parts};
+  };
+
+  // helper: "calc style" rounding to 2 dp for awkward results
+  const need2dp = isCalc; // calculator questions will often say 2 d.p.
+
+  switch(topicCode){
+    /* SPLITMERGE:BUILDQUESTION-CASES-START */
+    case "N7": {
+      // Multiplication
+      if(!isCalc){
+        // NON-CALCULATOR: integer answers only
+        if(marksTotal<=2){
+          const a = rng.int(2,25), b = rng.int(2,25);
+          return Q([partInteger(`n7_${marksTotal}`, `Work out: <b>${a} × ${b}</b>. <span class="endmark">[${marksTotal}]</span>`, marksTotal, a*b)]);
+        }
+
+        const parts=[];
+        for(let i=1;i<=marksTotal;i++){
+          const a = rng.int(12, 999);
+          const b = rng.int(2, 30);
+          parts.push(partInteger(`n7_${marksTotal}_${i}`, `Work out: <b>${a} × ${b}</b>. <span class="endmark">[1]</span>`, 1, a*b));
+        }
+        return Q(parts);
+      }
+
+      // CALCULATOR: decimals allowed (round to 2 d.p. where needed)
+      if(marksTotal<=2){
+        const a=rng.int(2,25), b=rng.int(2,25);
+        return Q([partNumber(`n7c_${marksTotal}`, `Work out: <b>${a} × ${b}</b>. <span class="endmark">[${marksTotal}]</span>`, marksTotal, a*b)]);
+      }
+
+      const parts=[];
+      for(let i=1;i<=marksTotal;i++){
+        const a = pickDec(rng,3);
+        const b = rng.choice([0.2,0.25,0.3,0.4,0.5,0.75,1.2,1.5,2.5,3.2]);
+        const ans = roundTo(a*b,2);
+        parts.push(partNumber(`n7c_${marksTotal}_${i}`, `Work out: <b>${a} × ${b}</b>. Give your answer to <b>2 decimal places</b>. <span class="endmark">[1]</span>`, 1, ans));
+      }
+      return Q(parts);
+    }
+
+    case "N8": {
+      if(marksTotal===1){
+        const d = rng.choice([2,3,4,5,6,8,9,10,12]);
+        const q = rng.int(3,18);
+        const n = d*q;
+        return Q([partInteger("n8_1", `Work out: <b>${n} ÷ ${d}</b>. <span class="endmark">[1]</span>`, 1, q)]);
+      }
+      if(marksTotal===2){
+        const d = rng.choice([2,4,5,8,10,16,20]);
+        const q = rng.int(3,30);
+        const n = roundTo(d*q, 2);
+        const instr = need2dp ? " Give your answer to <b>2 decimal places</b>." : "";
+        return Q([partNumber("n8_2", `Work out: <b>${fmt(n)} ÷ ${d}</b>.${instr} <span class="endmark">[2]</span>`, 2, roundTo(n/d,6), {dp: need2dp?2:null})]);
+      }
+      if(marksTotal===3){
+        const people = rng.choice([3,4,5,6,8,10,12]);
+        const each = rng.int(6,25);
+        const total = people*each;
+        return Q([partInteger("n8_3", `A total of <b>${total}</b> sweets is shared equally between <b>${people}</b> people. How many sweets does each person get? <span class="endmark">[3]</span>`, 3, each)]);
+      }
+            if(marksTotal===4){
+        const items = rng.choice([8,10,12,15,16,18,20,24]);
+        const perPence = rng.choice([5,10,12,15,20,25,30,40,50]);
+        const totalPence = items * perPence;
+        const otherItems = rng.choice([5,6,8,10,12,15,18,20]);
+
+        if(!isCalc){
+          return Q([
+            partInteger("n8_4a", `A box contains <b>${items}</b> items and costs <b>${totalPence} pence</b>.<br>
+              Work out the cost per item in <b>pence</b>. <span class="endmark">[2]</span>`, 2, perPence),
+            partInteger("n8_4b", `How much do <b>${otherItems}</b> items cost (in pence)? <span class="endmark">[2]</span>`, 2, otherItems*perPence),
+          ]);
+        }
+
+        const total = roundTo(totalPence/100,2);
+        return Q([
+          partNumber("n8_4a", `A box contains <b>${items}</b> items and costs <b>£${total.toFixed(2)}</b>.<br>Work out the cost per item (£). Give your answer to <b>2 decimal places</b>. <span class="endmark">[2]</span>`,2, roundTo(total/items,2)),
+          partNumber("n8_4b", `How much do <b>${otherItems}</b> items cost (£)? Give your answer to <b>2 decimal places</b>. <span class="endmark">[2]</span>`,2, roundTo(otherItems*total/items,2)),
+        ]);
+      }
+
+// 5 marks: division in context (NOT speed/pressure/density)
+      const cap = rng.choice(isCalc ? [28,32,36,40,45,50,52,56] : [24,28,30,32,36,40]);
+      const groups = rng.int(isCalc?7:4, isCalc?18:10);
+      const remainder = rng.int(1, cap-1);
+      const people = cap*groups + remainder;
+      const coaches = Math.ceil(people/cap);
+      const spare = coaches*cap - people;
+      return Q([
+        partInteger("n8_5a", `There are <b>${people}</b> people going on a trip. Each coach can carry <b>${cap}</b> people. Work out the <b>minimum number of coaches</b> needed. <span class="endmark">[3]</span>`, 3, coaches),
+        partInteger("n8_5b", `If <b>${coaches}</b> coaches are used, how many <b>empty seats</b> will there be? <span class="endmark">[2]</span>`, 2, spare)
+      ]);
+    }
+    case "N9": {
+      if(marksTotal===1){
+        const a=rng.int(-20,20), b=rng.int(-20,20);
+        return Q([partInteger("n9_1", `Work out: <b>${a} − (${b})</b>. <span class="endmark">[1]</span>`, 1, a-b)]);
+      }
+      if(marksTotal===2){
+        const a=rng.int(-30,30), b=rng.int(-30,30), c=rng.int(-15,15);
+        return Q([
+          partInteger("n9_2a", `Work out: <b>${a} + (${b})</b>. <span class="endmark">[1]</span>`, 1, a+b),
+          partInteger("n9_2b", `Work out: <b>${a} + (${b}) − (${c})</b>. <span class="endmark">[1]</span>`, 1, a+b-c),
+        ]);
+      }
+      if(marksTotal===3){
+        const a=rng.int(-20,20), b=rng.int(-9,9), c=rng.int(-9,9);
+        const ans = a + b*c;
+        return Q([partInteger("n9_3", `Work out: <b>${a} + ${b} × ${c}</b>. <span class="endmark">[3]</span>`, 3, ans)]);
+      }
+      if(marksTotal===4){
+        const a=rng.int(-12,12), b=rng.int(-12,12), c=rng.int(2,8), d=rng.int(-9,9);
+        const ans = (a-b)*c + d;
+        return Q([partInteger("n9_4", `Work out: <b>(${a} − ${b}) × ${c} + (${d})</b>. <span class="endmark">[4]</span>`, 4, ans)]);
+      }
+      // 5 marks: two linked negative steps, mark structure
+      const start=rng.int(-50,50);
+      const change1=rng.int(-30,30);
+      const change2=rng.int(-30,30);
+      const final = start + change1 - change2;
+      return Q([
+        partInteger("n9_5a", `Start at <b>${start}</b>. Add <b>${change1}</b>. Work out the result <span class="endmark">[2]</span>`, 2, start+change1),
+        partInteger("n9_5b", `Now subtract <b>${change2}</b>. Work out the final result <span class="endmark">[3]</span>`, 3, final),
+      ]);
+    }
+    /* SPLITMERGE:BUILDQUESTION-CASES-END */
+
+    default:
+      return Q([partNumber("x", `Not implemented. <span class="endmark">[${marksTotal}]</span>`, marksTotal, 0)]);
+  }
+}
+
+// SECTION: Rendering + inputs
+// - Builds the per-question HTML (question text, answer inputs, mark buttons).
+// - Installs widget behaviour for:
+//   • standard form EXP entry (single input)
+//   • drag-and-drop ordering tiles
+//   • numeric/text answer validation
+const topicSel = document.getElementById("topicSel");
+const marksSel = document.getElementById("marksSel");
+const calcSel  = document.getElementById("calcSel");
+const preview  = document.getElementById("preview");
+const fb       = document.getElementById("fb");
+
+const regenBtn = document.getElementById("regenBtn");
+const checkBtn = document.getElementById("checkBtn");
+const revealBtn= document.getElementById("revealBtn");
+
+let current = null;
+
+function initTopicDropdown(){
+  TOPICS.forEach(t=>{
+    const o=document.createElement("option");
+    o.value=t.code;
+    o.textContent=`${t.code} — ${t.name}`;
+    topicSel.appendChild(o);
+  });
+  topicSel.value = "N7"; // default: simplify fractions (a commonly tested topic)
+}
+
+function paperTagHtml(paperMode){
+  return paperMode==="calc"
+    ? `<span class="nc-tag calc">CALCULATOR</span>`
+    : `<span class="nc-tag nc">NON‑CALCULATOR</span>`;
+}
+
+function renderInput(input, answerType, baseId){
+  if (!input) return "";
+  const kind = input.kind;
+
+  if (kind==="fraction" || answerType==="fraction"){
+    return `
+      <span class="frac" aria-label="fraction answer">
+        <input id="${baseId}N" class="mini" type="text" inputmode="numeric" placeholder="numerator" />
+        <span class="bar"></span>
+        <input id="${baseId}D" class="mini" type="text" inputmode="numeric" placeholder="denominator" />
+      </span>
+    `;
+  }
+
+  if (kind==="pair"){
+    const lab0 = input.labels?.[0];
+    const lab1 = input.labels?.[1];
+    const ph0 = input.placeholders?.[0]||"a";
+    const ph1 = input.placeholders?.[1]||"b";
+    const labelHtml = (t)=> t ? `<span style="font-weight:900;color:#111827">${t}</span>` : "";
+    return `
+      <span class="twobox" aria-label="two answers">
+        ${labelHtml(lab0)}
+        <input id="${baseId}A" class="mini" type="text" inputmode="decimal" placeholder="${ph0}" />
+        ${labelHtml(lab1)}
+        <input id="${baseId}B" class="mini" type="text" inputmode="decimal" placeholder="${ph1}" />
+      </span>
+    `;
+  }
+
+  if (kind==="triple"){
+    return `
+      <span class="threebox" aria-label="three answers">
+        <input id="${baseId}A" class="mini" type="text" inputmode="decimal" placeholder="${input.placeholders?.[0]||"a"}" />
+        <input id="${baseId}B" class="mini" type="text" inputmode="decimal" placeholder="${input.placeholders?.[1]||"b"}" />
+        <input id="${baseId}C" class="mini" type="text" inputmode="decimal" placeholder="${input.placeholders?.[2]||"c"}" />
+      </span>
+    `;
+  }
+
+  if (kind==="standardForm" || answerType==="standardForm"){
+    // Single entry box only. Press EXP to insert ×10 and then type the power as a superscript.
+    return `
+      <div class="sfwrap" aria-label="standard form answer">
+        <input id="${baseId}" class="sfinput" type="text" inputmode="decimal" placeholder="e.g. 3.2×10⁵" autocomplete="off" />
+        <div class="keypad sfctrl" data-sf-target="${baseId}">
+          <button class="kbtn accent" data-act="exp">EXP</button>
+          <button class="kbtn" data-act="neg">±</button>
+          <button class="kbtn" data-act="bksp">⌫</button>
+          <button class="kbtn" data-act="clear">Clear</button>
+        </div>
+        <div class="sfhint">Type the number. Press <b>EXP</b> to insert <b>×10</b> with a superscript power.</div>
+      </div>
+    `;
+  }
+
+
+  if (kind==="primeFactors" || answerType==="primeFactors"){
+    // Visual box + hidden canonical string (uses ^ internally, never shown)
+    return `
+      <div class="pfwrap" aria-label="prime factorisation answer">
+        <div class="pfbox" id="${baseId}Box" tabindex="0" aria-label="prime factorisation input"></div>
+        <input id="${baseId}" type="hidden" value="" />
+        <div class="keypad" data-target="${baseId}" data-exp="0">
+          <button class="kbtn" data-prime="2">2</button>
+          <button class="kbtn" data-prime="3">3</button>
+          <button class="kbtn" data-prime="5">5</button>
+          <button class="kbtn" data-prime="7">7</button>
+          <button class="kbtn" data-prime="11">11</button>
+          <button class="kbtn primary" data-ins="×">×</button>
+
+          <button class="kbtn" data-act="exp" aria-pressed="false">EXP</button>
+          <button class="kbtn" data-digit="1">1</button>
+          <button class="kbtn" data-digit="2">2</button>
+          <button class="kbtn" data-digit="3">3</button>
+          <button class="kbtn" data-digit="4">4</button>
+          <button class="kbtn" data-digit="5">5</button>
+
+          <button class="kbtn" data-digit="6">6</button>
+          <button class="kbtn" data-digit="7">7</button>
+          <button class="kbtn" data-digit="8">8</button>
+          <button class="kbtn" data-digit="9">9</button>
+          <button class="kbtn" data-digit="0">0</button>
+          <button class="kbtn" data-act="bksp">⌫</button>
+
+          <button class="kbtn danger" data-act="clear" style="grid-column:1 / span 6">Clear</button>
+        </div>
+      </div>
+    `;
+  }
+
+  
+
+  if (kind==="order" || answerType==="order"){
+    // Drag-order widgets render inside the question text; nothing to render here.
+    return ``;
+  }
+if (kind==="money"){
+    return `<input id="${baseId}" type="text" inputmode="decimal" placeholder="£" style="min-width:140px" />`;
+  }
+
+  if (kind==="int" || kind==="integer"){
+
+    return `<input id="${baseId}" type="text" inputmode="numeric" placeholder="answer" style="min-width:140px" />`;
+  }
+
+  return `<input id="${baseId}" type="text" inputmode="decimal" placeholder="answer" style="min-width:160px" />`;
+}
+
+function renderQuestion(q){
+  const topicName = TOPICS.find(t=>t.code===q.topicCode)?.name ?? q.topicCode;
+  const title = `${q.topicCode} — ${topicName}`;
+  const badge = `<span class="badge">[${q.marksTotal} mark${q.marksTotal===1?"":"s"}]</span>`;
+
+  const itemsHtml = q.parts.map((p,idx)=>{
+    const inputHtml = renderInput(p.input, p.answer?.type, p.input?.id || `p${idx}`);
+    return `
+      <div class="item">
+        <div class="line">
+          <div class="qtext">${p.textHtml}</div>
+          <div>${inputHtml}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  preview.innerHTML = `
+    <div class="qpanel">
+      <div class="qhead">
+        <h3>${title} ${badge}</h3>
+        ${paperTagHtml(q.paperMode)}
+      </div>
+      <div class="qbody">
+        ${itemsHtml}
+      </div>
+    </div>
+    ${teacherNotes(current)}
+  `;
+
+  initDragOrders();
+
+  fb.style.display="none";
+  fb.className="feedback";
+  fb.textContent="";
+}
+
+
+// SECTION: Drag-and-drop ordering (integers/decimals/fractions)
+// - Tiles can be dragged from the bank into drop boxes.
+// - The student's order is stored as JSON in a hidden <input>.
+// - Check logic reads and compares the stored order to the expected token list.
+let dragState = {box:null, widget:null};
+let clickPick = null;
+
+function syncDragOrder(widget){
+  if(!widget) return;
+  const hidden = widget.querySelector('input[type="hidden"]');
+  const drops = Array.from(widget.querySelectorAll(".dropbox"));
+  const arr = drops.map(d=>d.querySelector(".dragbox")?.dataset.token ?? null);
+  if(hidden) hidden.value = JSON.stringify(arr);
+}
+
+function initDragOrders(){
+  if(clickPick && clickPick.classList) clickPick.classList.remove("selected");
+  clickPick = null;
+  preview.querySelectorAll(".drag-order").forEach(w=>syncDragOrder(w));
+}
+
+function placeDragBox(box, target){
+  if(!box || !target) return;
+  const widget = box.closest(".drag-order");
+  if(!widget) return;
+  const bank = widget.querySelector(".drag-bank");
+  if(!bank) return;
+
+  if(target.classList.contains("dropbox")){
+    const existing = target.querySelector(".dragbox");
+    const srcParent = box.parentElement;
+    if(existing && existing!==box){
+      if(srcParent && srcParent.classList.contains("dropbox")){
+        srcParent.appendChild(existing);
+      } else {
+        bank.appendChild(existing);
+      }
+    }
+    target.appendChild(box);
+  } else if(target.classList.contains("drag-bank")){
+    target.appendChild(box);
+  }
+  syncDragOrder(widget);
+}
+
+preview.addEventListener("dragstart", (e)=>{
+  const box = e.target.closest(".dragbox");
+  if(!box) return;
+  const widget = box.closest(".drag-order");
+  if(!widget) return;
+  dragState.box = box;
+  dragState.widget = widget;
+  box.classList.add("dragging");
+  try{
+    e.dataTransfer.setData("text/plain", box.dataset.token || box.textContent || "");
+    e.dataTransfer.effectAllowed = "move";
+  }catch(err){}
+});
+
+preview.addEventListener("dragend", (e)=>{
+  const box = e.target.closest(".dragbox");
+  if(box) box.classList.remove("dragging");
+  preview.querySelectorAll(".dropbox.over").forEach(el=>el.classList.remove("over"));
+  dragState.box = null;
+  dragState.widget = null;
+});
+
+preview.addEventListener("dragover", (e)=>{
+  const target = e.target.closest(".dropbox, .drag-bank");
+  if(!target) return;
+  const widget = target.closest(".drag-order");
+  if(!widget || widget !== dragState.widget) return;
+  e.preventDefault();
+  if(target.classList.contains("dropbox")) target.classList.add("over");
+});
+
+preview.addEventListener("dragleave", (e)=>{
+  const target = e.target.closest(".dropbox");
+  if(target) target.classList.remove("over");
+});
+
+preview.addEventListener("drop", (e)=>{
+  const target = e.target.closest(".dropbox, .drag-bank");
+  if(!target) return;
+  const widget = target.closest(".drag-order");
+  if(!widget || widget !== dragState.widget) return;
+  e.preventDefault();
+  target.classList.remove("over");
+  if(dragState.box){
+    placeDragBox(dragState.box, target);
+  }
+});
+
+// Tap/click fallback (mobile): tap a box to pick it up, then tap a target.
+preview.addEventListener("click", (e)=>{
+  const box = e.target.closest(".dragbox");
+  const widget = e.target.closest(".drag-order");
+  if(box && widget){
+    if(clickPick === box){
+      box.classList.remove("selected");
+      clickPick = null;
+    } else {
+      if(clickPick) clickPick.classList.remove("selected");
+      clickPick = box;
+      box.classList.add("selected");
+    }
+    return;
+  }
+
+  const target = e.target.closest(".dropbox, .drag-bank");
+  if(target && clickPick){
+    const w2 = target.closest(".drag-order");
+    const w1 = clickPick.closest(".drag-order");
+    if(w1 && w2 && w1===w2){
+      placeDragBox(clickPick, target);
+    }
+    clickPick.classList.remove("selected");
+    clickPick = null;
+  }
+});
+
+/* -------------------- standard form input (EXP -> superscript) -------------------- */
+const SF_SUP = {
+  "0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹",
+  "-":"⁻","+":"⁺"
+};
+const SF_UNSUP = {
+  "⁰":"0","¹":"1","²":"2","³":"3","⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9",
+  "⁻":"-","⁺":"+"
+};
+
+function sfEscapeHtml(s){
+  return String(s??"")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+function sfUnsupAll(s){
+  return String(s??"").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]/g, ch => (SF_UNSUP[ch] ?? ch));
+}
+function sfSupDigits(s){
+  return String(s??"").replace(/[0-9\-\+]/g, ch => (SF_SUP[ch] ?? ch));
+}
+
+function sfToHTML(raw){
+  const s0 = String(raw ?? "").trim();
+  if(!s0) return "";
+  const plain = sfUnsupAll(s0).replace(/\s+/g,"");
+
+  // Display E-notation as ×10^n.
+  let m = plain.match(/^([+-]?(?:\d+(?:\.\d+)?|\.\d+))[eE]([+-]?\d*)$/);
+  if(m){
+    const A = m[1] ?? "";
+    const n = m[2] ?? "";
+    return `${sfEscapeHtml(A)}<span class="mul">×</span>10<sup>${sfEscapeHtml(n || "□")}</sup>`;
+  }
+
+  // Display A×10n or A×10^n (caret optional)
+  m = plain.match(/^([+-]?(?:\d+(?:\.\d+)?|\.\d+))(?:×|x|\*)10\^?([+-]?\d*)$/i);
+  if(m){
+    const A = m[1] ?? "";
+    const n = m[2] ?? "";
+    return `${sfEscapeHtml(A)}<span class="mul">×</span>10<sup>${sfEscapeHtml(n || "□")}</sup>`;
+  }
+
+  // Fallback: show as typed (still replaces × with styled ×).
+  return sfEscapeHtml(s0).replace(/×/g, `<span class="mul">×</span>`);
+}
+
+function sfSyncPreview(targetId){
+  const el = document.getElementById(targetId);
+  const box = document.getElementById(targetId+"Box");
+  if(!el || !box) return;
+  box.innerHTML = sfToHTML(el.value);
+}
+
+function sfSetCaretEnd(el){
+  try{
+    const n = el.value.length;
+    el.setSelectionRange(n, n);
+  }catch(err){}
+}
+
+function sfEnsureTen(v){
+  v = String(v ?? "");
+  if(/(?:×|x|\*)10/.test(v)) return v;
+  if(v==="" || v==="-") v = (v==="-") ? "-1" : "1";
+  return v + "×10";
+}
+
+function sfGetExpPart(v){
+  const m = String(v ?? "").match(/(?:×|x|\*)10(.*)$/);
+  return m ? (m[1] ?? "") : "";
+}
+
+function sfToggleMantissaSign(v){
+  v = String(v ?? "");
+  if(v.startsWith("-")) return v.slice(1);
+  return v ? "-" + v : "-";
+}
+
+function sfToggleExponentSign(v){
+  v = String(v ?? "");
+  const m = v.match(/^(.*?)(?:×|x|\*)10(.*)$/);
+  if(!m) return sfToggleMantissaSign(v);
+
+  const head = m[1] ?? "";
+  const expRaw = m[2] ?? "";
+  const expPlain = sfUnsupAll(expRaw);
+
+  let outPlain = expPlain;
+  if(outPlain.startsWith("-")) outPlain = outPlain.slice(1);
+  else outPlain = "-" + outPlain.replace(/^\+/, "");
+
+  const outSup = sfSupDigits(outPlain);
+  return head + "×10" + outSup;
+}
+
+function sfBackspace(v){
+  v = String(v ?? "");
+  if(!v) return "";
+
+  const last = v.slice(-1);
+  if(typeof SF_UNSUP[last] !== "undefined"){
+    // delete superscript digit/sign
+    v = v.slice(0,-1);
+    return v;
+  }
+
+  if(v.endsWith("×10")) return v.slice(0,-3);
+  return v.slice(0,-1);
+}
+
+// Keep the preview in sync while typing
+preview.addEventListener("input", (e)=>{
+  const el = e.target;
+  if(!(el instanceof HTMLInputElement)) return;
+  if(!el.classList.contains("sfinput")) return;
+
+  // If the user deletes the ×10 part, cancel EXP mode
+  if(el.dataset.sfExp === "1" && !/(?:×|x|\*)10/.test(el.value)){
+    el.dataset.sfExp = "0";
+    const ctrl = preview.querySelector(`.sfctrl[data-sf-target="${el.id}"]`);
+    const expBtn = ctrl ? ctrl.querySelector('button[data-act="exp"]') : null;
+    if(expBtn){
+      expBtn.classList.remove("on");
+      expBtn.setAttribute("aria-pressed","false");
+    }
+  }
+
+  sfSyncPreview(el.id);
+});
+
+// Keyboard typing: when EXP is ON, digits become superscripts (no E and no caret notation).
+preview.addEventListener("keydown", (e)=>{
+  const el = e.target;
+  if(!(el instanceof HTMLInputElement)) return;
+  if(!el.classList.contains("sfinput")) return;
+  if(el.dataset.sfExp !== "1") return;
+
+  const key = e.key;
+
+  // Always keep typing at the end while EXP is on
+  if(key==="ArrowLeft" || key==="ArrowRight" || key==="Home" || key==="End"){
+    e.preventDefault();
+    sfSetCaretEnd(el);
+    return;
+  }
+
+  if(key==="Backspace"){
+    e.preventDefault();
+    const nv = sfBackspace(el.value);
+    el.value = nv;
+    sfSyncPreview(el.id);
+    sfSetCaretEnd(el);
+
+    // If we removed the ×10 part, also turn EXP off
+    if(!/(?:×|x|\*)10/.test(el.value)){
+      el.dataset.sfExp = "0";
+      const ctrl = preview.querySelector(`.sfctrl[data-sf-target="${el.id}"]`);
+      const expBtn = ctrl ? ctrl.querySelector('button[data-act="exp"]') : null;
+      if(expBtn){
+        expBtn.classList.remove("on");
+        expBtn.setAttribute("aria-pressed","false");
+      }
+    }
+    return;
+  }
+
+  if(/^[0-9]$/.test(key) || key==="-" || key==="+"){
+    e.preventDefault();
+    let v = sfEnsureTen(el.value);
+
+    const expRaw = sfGetExpPart(v);
+    const expPlain = sfUnsupAll(expRaw);
+
+    // Only allow +/− as the FIRST exponent character
+    if((key==="-" || key==="+") && expPlain.length>0) return;
+
+    v += SF_SUP[key] ?? key;
+    el.value = v;
+    sfSyncPreview(el.id);
+    sfSetCaretEnd(el);
+    return;
+  }
+});
+
+// Buttons (EXP / ± / ⌫ / Clear)
+preview.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button");
+  if(!btn) return;
+
+  const ctrl = btn.closest(".sfctrl");
+  if(!ctrl) return;
+
+  e.preventDefault();
+
+  const targetId = ctrl.dataset.sfTarget;
+  const el = document.getElementById(targetId);
+  if(!el) return;
+
+  const act = btn.dataset.act;
+
+  if(act==="clear"){
+    el.value = "";
+    el.dataset.sfExp = "0";
+    btn.classList.remove("on");
+    btn.setAttribute("aria-pressed","false");
+    sfSyncPreview(targetId);
+    el.focus();
+    return;
+  }
+
+  if(act==="bksp"){
+    const nv = sfBackspace(el.value);
+    el.value = nv;
+    sfSyncPreview(targetId);
+    sfSetCaretEnd(el);
+
+    if(!/(?:×|x|\*)10/.test(el.value)){
+      el.dataset.sfExp = "0";
+      const expBtn = ctrl.querySelector('button[data-act="exp"]');
+      if(expBtn){
+        expBtn.classList.remove("on");
+        expBtn.setAttribute("aria-pressed","false");
+      }
+    }
+
+    el.focus();
+    return;
+  }
+
+  if(act==="exp"){
+    const expBtn = ctrl.querySelector('button[data-act="exp"]');
+    const on = !(el.dataset.sfExp === "1");
+    el.dataset.sfExp = on ? "1" : "0";
+    if(expBtn){
+      expBtn.classList.toggle("on", on);
+      expBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    if(on){
+      el.value = sfEnsureTen(el.value);
+      // Do NOT insert ^ or E. Exponent digits will be added as superscripts.
+      sfSetCaretEnd(el);
+    }
+
+    sfSyncPreview(targetId);
+    el.focus();
+    return;
+  }
+
+  if(act==="neg"){
+    // If there is a ×10 part, toggle the exponent sign. Otherwise toggle the mantissa sign.
+    if(/(?:×|x|\*)10/.test(el.value)){
+      el.value = sfToggleExponentSign(el.value);
+    }else{
+      el.value = sfToggleMantissaSign(el.value);
+    }
+    sfSyncPreview(targetId);
+    sfSetCaretEnd(el);
+    el.focus();
+    return;
+  }
+});
+
+/* -------------------- keypad for prime factors (exp / × / primes) -------------------- */
+function pfToHTML(expr){
+  if(!expr) return "";
+  const parts = String(expr).split("×");
+  let out = "";
+  for(let i=0;i<parts.length;i++){
+    const tok = parts[i];
+    if(tok){
+      if(tok.includes("^")){
+        const [base, exp] = tok.split("^");
+        out += `${base}<sup>${exp||""}</sup>`;
+      }else{
+        out += tok;
+      }
+    }
+    if(i < parts.length-1){
+      out += `<span class="mul">×</span>`;
+    }
+  }
+  return out;
+}
+
+function pfSetValue(targetId, newVal){
+  const hidden = document.getElementById(targetId);
+  const box = document.getElementById(targetId+"Box");
+  if(!hidden || !box) return;
+  hidden.value = newVal;
+  box.innerHTML = pfToHTML(newVal);
+}
+
+function pfBackspace(expr){
+  if(!expr) return "";
+  let s = String(expr);
+  if(s.endsWith("×")) return s.slice(0,-1);
+
+  const parts = s.split("×");
+  if(parts.length===0) return "";
+  let last = parts[parts.length-1] || "";
+
+  if(last.includes("^")){
+    let [base, exp] = last.split("^");
+    exp = exp || "";
+    if(exp.length<=1){
+      last = base;
+    }else{
+      last = base + "^" + exp.slice(0,-1);
+    }
+    parts[parts.length-1] = last;
+    return parts.join("×");
+  }
+
+  last = last.slice(0,-1);
+  if(last===""){
+    parts.pop();
+    return parts.join("×");
+  }
+  parts[parts.length-1] = last;
+  return parts.join("×");
+}
+
+preview.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button");
+  if(!btn) return;
+
+  const pad = btn.closest(".keypad");
+  if(!pad) return;
+
+  e.preventDefault();
+
+  const target = pad.dataset.target;
+  const hidden = document.getElementById(target);
+  const box = document.getElementById(target+"Box");
+  if(!hidden || !box) return;
+
+  const expBtn = pad.querySelector('button[data-act="exp"]');
+  const setExp = (on)=>{
+    pad.dataset.exp = on ? "1" : "0";
+    if(expBtn){
+      expBtn.classList.toggle("on", on);
+      expBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+  };
+
+  const isExp = pad.dataset.exp === "1";
+  let val = hidden.value || "";
+
+  const act = btn.dataset.act;
+  const prime = btn.dataset.prime;
+  const digit = btn.dataset.digit;
+  const ins = btn.dataset.ins;
+
+  if(act==="clear"){
+    pfSetValue(target, "");
+    setExp(false);
+    return;
+  }
+  if(act==="bksp"){
+    const nv = pfBackspace(val);
+    pfSetValue(target, nv);
+    // keep exp mode as-is
+    return;
+  }
+  if(act==="exp"){
+    if(!val || val.endsWith("×")){ setExp(false); return; }
+    setExp(!isExp);
+    return;
+  }
+
+  if(ins==="×"){
+    setExp(false);
+    if(!val) return;
+    if(val.endsWith("×")) return;
+    pfSetValue(target, val + "×");
+    return;
+  }
+
+  if(prime){
+    setExp(false);
+    if(val && !val.endsWith("×")) val += "×";
+    pfSetValue(target, val + prime);
+    return;
+  }
+
+  if(typeof digit !== "undefined"){
+    if(pad.dataset.exp !== "1") return;
+    if(!val || val.endsWith("×")) return;
+
+    const parts = val.split("×");
+    let last = parts[parts.length-1] || "";
+    if(!last) return;
+
+    let base = last, exp = "";
+    if(last.includes("^")){
+      [base, exp] = last.split("^");
+      exp = exp || "";
+    }
+    if(exp==="" && digit==="0") return; // no leading zero exponent
+    exp += digit;
+    parts[parts.length-1] = base + "^" + exp;
+    pfSetValue(target, parts.join("×"));
+    return;
+  }
+});
+
+/* -------------------- Answer retrieval -------------------- */
+function clearMarks(){
+  // remove ok/bad classes from inputs + drag-order tiles
+  preview.querySelectorAll("input,select,.dropbox,.dragbox").forEach(el=>{
+    el.classList.remove("ok","bad");
+  });
+}
+function markEl(el, ok){
+  if(!el) return;
+  el.classList.remove("ok","bad");
+  el.classList.add(ok ? "ok" : "bad");
+}
+function getUserAnswerForPart(part){
+  const id = part.input?.id;
+  const type = part.answer?.type;
+
+  if (part.input?.kind==="order" || type==="order"){
+    const hidden = document.getElementById(id);
+    const widget = preview.querySelector(`.drag-order[data-drag-order="${id}"]`);
+    const drops = widget ? Array.from(widget.querySelectorAll(".dropbox")) : [];
+
+    let arr = null;
+    if(hidden && hidden.value){
+      try{ arr = JSON.parse(hidden.value); }catch{ arr = null; }
+    }
+    if(!Array.isArray(arr) && drops.length){
+      arr = drops.map(d=>d.querySelector(".dragbox")?.dataset.token ?? null);
+    }
+    if(!Array.isArray(arr)){
+      return {ok:false, val:null, els:drops.length?drops:[hidden].filter(Boolean)};
+    }
+
+    const filled = arr.every(x=>x!==null && x!=="" && typeof x!=="undefined");
+    return {ok:filled, val:arr, els:drops.length?drops:[hidden].filter(Boolean)};
+  }
+
+  if (part.input?.kind==="fraction" || type==="fraction"){
+    const nEl = document.getElementById(id+"N");
+    const dEl = document.getElementById(id+"D");
+    const n = Number(nEl?.value);
+    const d = Number(dEl?.value);
+    if(!Number.isFinite(n)||!Number.isFinite(d)||d===0) return {ok:false, val:null, els:[nEl,dEl]};
+    return {ok:true, val:{n, d}, els:[nEl,dEl]};
+  }
+
+  if (part.input?.kind==="pair" || type==="pair"){
+    const aEl = document.getElementById(id+"A");
+    const bEl = document.getElementById(id+"B");
+    const a = asNum(aEl?.value);
+    const b = asNum(bEl?.value);
+    if(!Number.isFinite(a)||!Number.isFinite(b)) return {ok:false, val:null, els:[aEl,bEl]};
+    return {ok:true, val:[a,b], els:[aEl,bEl]};
+  }
+
+  if (part.input?.kind==="standardForm" || type==="standardForm"){
+    const el = document.getElementById(id);
+    const parsed = parseStandardFormInput(el?.value);
+    if(!parsed.ok || !Number.isFinite(parsed.A) || !Number.isFinite(parsed.n)) return {ok:false, val:null, els:[el]};
+    return {ok:true, val:{A: parsed.A, n: parsed.n}, els:[el]};
+  }
+
+  if (part.input?.kind==="primeFactors" || type==="primeFactors"){
+    const el = document.getElementById(id);
+    const raw = (el?.value ?? "").trim();
+    if(!raw) return {ok:false, val:null, els:[el]};
+    return {ok:true, val:raw, els:[el]};
+  }
+
+  if (part.input?.kind==="symbol" || type==="symbol"){
+    const el = document.getElementById(id);
+    const v = (el?.value ?? "").trim();
+    if(!v) return {ok:false, val:null, els:[el]};
+    return {ok:true, val:v, els:[el]};
+  }
+
+  if (part.input?.kind==="time" || type==="time"){
+    const el = document.getElementById(id);
+    const v = (el?.value ?? "").trim();
+    if(!v) return {ok:false, val:null, els:[el]};
+    return {ok:true, val:v, els:[el]};
+  }
+
+  if (part.input?.kind==="integer"){
+    const el = document.getElementById(id);
+    const x = asNum(el?.value);
+    if(!Number.isFinite(x) || !Number.isInteger(x)) return {ok:false, val:null, els:[el]};
+    return {ok:true, val:x, els:[el]};
+  }
+
+  const el = document.getElementById(id);
+  const x = asNum(el?.value);
+  if(!Number.isFinite(x)) return {ok:false, val:null, els:[el]};
+  return {ok:true, val:x, els:[el]};
+}
+
+
+
+/* -------------------- prime-factor answer parsing -------------------- */
+function parsePrimeFactorString(raw){
+  // Accept forms like: 2^3×3×5^2  or 2*2*2*3*25 etc
+  // Reject plain "2475" with no × or ^ (not a factorisation).
+  const s = raw.replace(/\s+/g,"")
+               .replace(/x/gi,"×")
+               .replace(/\*/g,"×")
+               .replace(/\./g,"×"); // allow dot as multiply
+  const hasSep = s.includes("×") || s.includes("^");
+  if(!hasSep) return {ok:false, map:null};
+
+  const parts = s.split("×").filter(Boolean);
+  if(parts.length===0) return {ok:false, map:null};
+
+  const map = {};
+  for(const tok of parts){
+    if(tok==="1" || tok==="+1") return {ok:false, map:null}; // disallow 1 as factor
+    // exponent form p^e
+    if(tok.includes("^")){
+      const m = tok.match(/^(\d+)\^(\d+)$/);
+      if(!m) return {ok:false, map:null};
+      const p = Number(m[1]), e = Number(m[2]);
+      if(!(Number.isInteger(p)&&Number.isInteger(e)&&p>=2&&e>=1)) return {ok:false, map:null};
+      const f = factorise(p);
+      // base should be prime ideally; but allow composite base (we factor it)
+      for(const k of Object.keys(f)){
+        map[k] = (map[k]||0) + f[k]*e;
+      }
+    } else {
+      // integer factor (prime or composite)
+      const v = Number(tok);
+      if(!Number.isInteger(v) || v<2) return {ok:false, map:null};
+      const f = factorise(v);
+      for(const k of Object.keys(f)){
+        map[k] = (map[k]||0) + f[k];
+      }
+    }
+  }
+  return {ok:true, map};
+}
+
+/* -------------------- marking -------------------- */
+function markCurrent(){
+  if(!current) return;
+
+  clearMarks();
+
+  let score = 0;
+  let max = current.marksTotal;
+
+  for(const part of current.parts){
+    const expected = part.answer;
+    const got = getUserAnswerForPart(part);
+    const pm = part.marks ?? 0;
+
+    // Drag-order marking (2 marks in the higher-order questions).
+    if(expected && expected.type==="order"){
+      const correct = Array.isArray(expected.value) ? expected.value : [];
+      const user = Array.isArray(got.val) ? got.val : [];
+      let partScore = 0;
+
+      if(user.length === correct.length && got.els && got.els.length){
+        let correctCount = 0;
+
+        got.els.forEach((el,i)=>{
+          const posOk = Boolean(got.ok) && (user[i] === correct[i]);
+          if(posOk) correctCount++;
+          markEl(el, posOk);
+        });
+
+        if(Boolean(got.ok) && correctCount === correct.length){
+          partScore = pm;
+        } else if(Boolean(got.ok) && pm>=2 && correctCount >= Math.ceil(correct.length/2)){
+          partScore = 1; // partial credit
+        } else {
+          partScore = 0;
+        }
+      } else {
+        if(got.els && got.els.length) got.els.forEach(el=>markEl(el,false));
+        partScore = 0;
+      }
+
+      score += partScore;
+      continue;
+    }
+
+    let ok = false;
+
+    if(!got.ok){
+      ok = false;
+    } else if(expected.type==="fraction"){
+      ok = fracEq(got.val, expected.value);
+    } else if(expected.type==="pair"){
+      ok = close(got.val[0], expected.value[0], 1e-6) && close(got.val[1], expected.value[1], 1e-6);
+    } else if(expected.type==="standardForm"){
+      // require standard form: 1 ≤ A < 10 and integer n
+      const A = got.val.A;
+      const n = got.val.n;
+      const userVal = A * (10**n);
+      const targetVal = expected.value;
+      ok = Number.isFinite(userVal) && Number.isFinite(A) && Number.isInteger(n) && A>=1 && A<10 &&
+           close(userVal, targetVal, Math.max(1e-9, Math.abs(targetVal)*1e-8));
+    } else if(expected.type==="primeFactors"){
+      const parsed = parsePrimeFactorString(got.val);
+      ok = parsed.ok && mapsEqual(parsed.map, expected.value);
+    } else if(expected.type==="symbol"){
+      ok = got.val === expected.value;
+    } else if(expected.type==="time"){
+      ok = String(got.val).trim() === String(expected.value).trim();
+    } else {
+      // number
+      ok = close(got.val, expected.value, Math.max(1e-9, Math.abs(expected.value)*1e-8));
+    }
+
+    // Mark UI elements
+    if(got.els && got.els.length){
+      got.els.forEach(el=>markEl(el, ok));
+    }
+
+    if(ok) score += pm;
+  }
+
+  fb.style.display="block";
+  fb.className = "feedback " + (score===max ? "good" : (score>0 ? "" : "bad"));
+  fb.innerHTML = `<b>Score:</b> ${score} / ${max}`;
+}
+
+
+
+function revealCurrent(){
+  if(!current) return;
+  const fb = document.getElementById("fb");
+  if(!fb) return;
+  fb.style.display = "block";
+
+  const formatStd = (v)=>{
+    const num = Number(v);
+    if(!isFinite(num)) return String(v);
+    if(num===0) return "0"; // avoid 10^0
+    const sign = num<0 ? "−" : "";
+    const abs = Math.abs(num);
+    const n = Math.floor(Math.log10(abs));
+    if(n===0) return sign + fmt(abs,4); // avoid 10^0
+    const A = abs / Math.pow(10,n);
+    return `${sign}${fmt(A,4)} × 10<sup>${n}</sup>`;
+  };
+
+  const formatPF = (map)=>{
+    const parts = Object.entries(map)
+      .sort((a,b)=>Number(a[0])-Number(b[0]))
+      .map(([p,e])=>{
+        const ee = Number(e);
+        return ee===1 ? `${p}` : `${p}<sup>${ee}</sup>`;
+      });
+    return parts.join(" × ");
+  };
+
+  const answers = current.parts.map(p=>{
+    const ex = p.answer;
+    if(!ex) return "";
+    if(ex.type==="fraction"){
+      return mfrac(ex.value.n, ex.value.d);
+    }
+    if(ex.type==="order"){
+      const tok=(t)=>{const s=String(t);const m=s.match(/^(-?\d+)\s*\/\s*(\d+)$/);return m?mfrac(parseInt(m[1],10),parseInt(m[2],10)):s;};
+      return ex.value.map(tok).join(", ");
+    }
+    if(ex.type==="pair"){
+      return `(${ex.value[0]}, ${ex.value[1]})`;
+    }
+    if(ex.type==="primeFactors"){
+      return formatPF(ex.value);
+    }
+    if(ex.type==="standardForm"){
+      return formatStd(ex.value);
+    }
+    if(ex.type==="time"){
+      return String(ex.value);
+    }
+    if(p.input && p.input.kind==="money"){
+      return "£" + Number(ex.value).toFixed(2);
+    }
+    return String(ex.value);
+  });
+
+  fb.innerHTML = `
+    <div style="margin-top:10px">
+      <b>Answers:</b>
+      <ol style="margin:8px 0 0 18px">
+        ${answers.map(a=>`<li>${a}</li>`).join("")}
+      </ol>
+    </div>
+    ${teacherNotes(current)}
+  `;
+}
+
+
+
+
+function teacherNotes(q){
+  if(!q) return "";
+  const t = TOPICS.find(x=>x.code===q.topicCode);
+  const topicName = t ? t.name : q.topicCode;
+  const m = q.marksTotal;
+
+  const f = (n,d)=>mfrac(n,d);
+  const li = (items)=>items.map(s=>`<li>${s}</li>`).join("");
+  const modeNote = (q.paperMode==="calc")
+    ? "Calculator: values are set so calculator use is meaningful (non‑friendly decimals/large values) while the assessment focus remains on the targeted number skill."
+    : "Non‑calculator: values are chosen so written/mental methods are realistic, keeping the focus on structure and place value rather than calculator keystrokes.";
+
+
+  let intent = "";
+  let mark = [];
+  let miscon = [];
+  let next = "";
+  let variants = [];
+
+  switch(q.topicCode){
+    /* SPLITMERGE:TEACHERNOTES-CASES-START */
+
+    /* SPLITMERGE:TEACHERNOTES-CASES-END */
+  }
+
+  // Default fallbacks (keep concise but usable)
+  if(!intent){
+    intent = `Assess ${topicName.toLowerCase()} at GCSE ${m}-mark demand.`;
+  }
+  if(mark.length===0){
+    if(m===1) mark = ["A1: correct answer."];
+    else if(m===2) mark = ["M1: correct method/approach.","A1: correct final answer."];
+    else if(m===3) mark = ["M1: selects a suitable method from the context.","M1: carries out the method correctly.","A1: correct final answer with units/format."];
+    else if(m===4) mark = ["M1: sets up a correct multi-step method.","M1: completes key steps correctly.","A1: correct final result.","B1: justification/comparison as required."];
+    else mark = ["M1: forms a correct strategy/equation.","M1: executes key steps correctly.","M1: applies constraints/checks reasonableness.","A1: correct final result.","B1: coherent conclusion/justification where required."];
+  }
+  if(miscon.length===0){
+    miscon = [
+      "Chooses an incorrect rule/procedure → indicates a gap in the key definition or prerequisite skill.",
+      "Uses the right method but makes a place-value/negative-sign slip → indicates a fluency issue."
+    ];
+    next = next || "Re-teach the key rule/definition, then practise with ‘one-change’ questions and immediate checking.";
+    variants = variants.length ? variants : ["Shopping (£) context.","Measurement context (cm, kg, L).","Travel/time context."];
+  }
+  if(!next) next = "Re-teach the key idea, model one worked example, then set short focused practice on the micro-skill that failed.";
+
+  return `
+    <div class="fb" style="margin-top:10px">
+      <b>Teacher notes (diagnostic):</b><br>
+      <div style="margin-top:6px"><b>Assessment intent:</b> ${intent}<br><span class="muted"><b>${q.paperMode==="calc"?"CALCULATOR":"NON-CALCULATOR"}:</b> ${modeNote}</span></div>
+      <div style="margin-top:6px"><b>Indicative mark scheme:</b>
+        <ul>${li(mark)}</ul>
+      </div>
+      <div style="margin-top:6px"><b>Common wrong answers / misconceptions:</b>
+        <ul>${li(miscon)}</ul>
+      </div>
+      <div style="margin-top:6px"><b>Next teaching move:</b> ${next}</div>
+      ${(m>=3)?`<div style="margin-top:6px"><b>Scenario variants (same maths, different context):</b> Randomised in the student prompt (3 contexts).</div>`:""}
+    </div>
+  `;
+}
+
+function generateNew(){
+  const topic = topicSel.value;
+  const marks = Number(marksSel.value);
+  const paperMode = calcSel.value;
+
+  const rng = makeRng(cryptoSeed());
+  let q = buildQuestion(topic, marks, paperMode, rng);
+
+  // Patch: N11(3) placeholder fix if needed
+  if(q.topicCode==="N11" && q.marksTotal===3){
+    // we generated a placeholder null; replace with a consistent y equation
+    const xAns = q.parts[0].answer.value;
+    const k = Math.floor(Math.random()*19)+2; // 2..20, OK for patch only
+    q.parts[1].textHtml = `Now find <b>y</b>: <b>y − ${xAns} = ${k}</b>. <span class="endmark">[1]</span>`;
+    q.parts[1].answer.value = xAns + k;
+  }
+
+  // Safety: ensure marks sum
+  const sum = q.parts.reduce((s,p)=>s+(p.marks||0),0);
+  if(sum !== q.marksTotal){
+    console.warn("Marks mismatch; adjusting", {sum, expected:q.marksTotal});
+    // force 1 mark each then remainder on last
+    const parts = q.parts.map(p=>({...p, marks:1}));
+    const remainder = q.marksTotal - parts.length;
+    if(remainder>0) parts[parts.length-1].marks += remainder;
+    q.parts = parts;
+  }
+
+  current = q;
+  renderQuestion(q);
+}
+
+regenBtn.addEventListener("click", generateNew);
+checkBtn.addEventListener("click", markCurrent);
+revealBtn.addEventListener("click", revealCurrent);
+topicSel.addEventListener("change", generateNew);
+marksSel.addEventListener("change", generateNew);
+calcSel.addEventListener("change", generateNew);
+
+/* -------------------- init -------------------- */
+initTopicDropdown();
+generateNew();
+</script>
+</body>
+</html>
