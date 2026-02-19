@@ -889,13 +889,32 @@ function buildQuestion(topicCode, marksTotal, paperMode, rng){
 
         if(marksTotal===3){
           if(sc===1){
-            // DEAL (set numbers so the key multiplication is 2-digit × 2-digit)
+            // DEAL (vary the offer to improve number variation)
             const price = rng.int(10, 25);
-            const bought = rng.choice([30,33,36,39,42,45]); // multiple of 3
-            const payFor = Math.floor(bought/3)*2;
-            const total = price*payFor;
+
+            // buy X for the price of Y (Y < X)
+            const offers = [
+              {buy:3, pay:2},
+              {buy:4, pay:3},
+              {buy:5, pay:4},
+              {buy:4, pay:2},
+              {buy:5, pay:3},
+            ];
+            const offer = rng.choice(offers);
+
+            // Choose a multiple of the offer size so the offer applies neatly
+            const mult = (offer.buy===3)
+              ? rng.int(10,15)   // 30–45
+              : (offer.buy===4)
+                ? rng.int(8,12)  // 32–48
+                : rng.int(6,10); // 30–50
+
+            const bought = mult * offer.buy;
+            const payFor = mult * offer.pay;
+            const total = price * payFor;
+
             return Q([
-              partMoney("n7_3_nc_s1", `A café sells muffins for <b>£${price}</b> each.<br>Offer: “Buy <b>3</b> muffins for the price of <b>2</b>.”<br>A customer buys <b>${bought}</b> muffins.<br>Work out the total cost using the offer. <span class="endmark">[3]</span>`, 3, total),
+              partMoney("n7_3_nc_s1", `A café sells muffins for <b>£${price}</b> each.<br>Offer: “Buy <b>${offer.buy}</b> muffins for the price of <b>${offer.pay}</b>.”<br>A customer buys <b>${bought}</b> muffins.<br>Work out the total cost using the offer. <span class="endmark">[3]</span>`, 3, total),
             ]);
           }
           if(sc===2){
@@ -1062,25 +1081,36 @@ if(marksTotal===5){
                 <tr><td>Ruler</td><td class="num">£${ruler}</td></tr>
               </table>`;
 
-            let qPlanner, qPen, qCalc, qRuler;
+            // Randomise which items are used in parts (a) and (b) (and the order they are mentioned)
+            const items = [
+              {name:"Planner", plural:"planners", cost:planner},
+              {name:"Pen pack", plural:"pen packs", cost:pen},
+              {name:"Calculator", plural:"calculators", cost:calc},
+              {name:"Ruler", plural:"rulers", cost:ruler},
+            ];
+            const chosenItems = rng.shuffle(items);
+            const aItems = chosenItems.slice(0,2);
+            const bItems = chosenItems.slice(2);
+
+            let qA1, qA2, qB1, qB2;
             let aTotal, allTotal, change;
 
             for(let tries=0; tries<200; tries++){
-              qPlanner = rng.int(2,5);
-              qPen = pickDiffInt(2,5,qPlanner);
-              qCalc = rng.int(2,5);
-              qRuler = pickDiffInt(2,5,qCalc);
+              qA1 = rng.int(2,5);
+              qA2 = pickDiffInt(2,5,qA1);
+              qB1 = rng.int(2,5);
+              qB2 = pickDiffInt(2,5,qB1);
 
-              aTotal = qPlanner*planner + qPen*pen;
-              allTotal = aTotal + qCalc*calc + qRuler*ruler;
+              aTotal = qA1*aItems[0].cost + qA2*aItems[1].cost;
+              allTotal = aTotal + qB1*bItems[0].cost + qB2*bItems[1].cost;
               change = 100 - allTotal;
 
               if(change >= 0) break;
             }
 
             return Q([
-              partMoney("n7_5_nc_s1a", `A school shop sells items.${table}<br><b>(a)</b> A student buys <b>${qPlanner}</b> planners and <b>${qPen}</b> pen packs.<br>Work out the total cost. <span class="endmark">[2]</span>`, 2, aTotal),
-              partMoney("n7_5_nc_s1b", `<b>(b)</b> The student also buys <b>${qCalc}</b> calculators and <b>${qRuler}</b> rulers.<br>They pay with <b>£100</b>.<br>Work out the change they get. <span class="endmark">[3]</span>`, 3, change),
+              partMoney("n7_5_nc_s1a", `A school shop sells items.${table}<br><b>(a)</b> A student buys <b>${qA1}</b> ${aItems[0].plural} and <b>${qA2}</b> ${aItems[1].plural}.<br>Work out the total cost. <span class="endmark">[2]</span>`, 2, aTotal),
+              partMoney("n7_5_nc_s1b", `<b>(b)</b> The student also buys <b>${qB1}</b> ${bItems[0].plural} and <b>${qB2}</b> ${bItems[1].plural}.<br>They pay with <b>£100</b>.<br>Work out the change they get. <span class="endmark">[3]</span>`, 3, change),
             ]);
           }
 
@@ -1099,17 +1129,28 @@ if(marksTotal===5){
                 <tr><td>Sponges</td><td class="num">${sponges}</td></tr>
               </table>`;
 
-            const bGloves = rng.int(2,5);
-            const bBottles = pickDiffInt(2,5,bGloves);
-            const bTins = rng.int(2,5);
-            const bSponges = pickDiffInt(2,5,bTins);
+            // Randomise which item types are used in each part (and their order)
+            const itemTypes = [
+              {name:"gloves", phrase:"boxes of gloves", per:gloves},
+              {name:"bottles", phrase:"boxes of bottles", per:bottles},
+              {name:"tins", phrase:"boxes of tins", per:tins},
+              {name:"sponges", phrase:"boxes of sponges", per:sponges},
+            ];
+            const chosen = rng.shuffle(itemTypes);
+            const aItems = chosen.slice(0,2);
+            const bItems = chosen.slice(2);
 
-            const aTotal = bGloves*gloves + bBottles*bottles;
-            const allTotal = aTotal + bTins*tins + bSponges*sponges;
+            const bA1 = rng.int(2,5);
+            const bA2 = pickDiffInt(2,5,bA1);
+            const bB1 = rng.int(2,5);
+            const bB2 = pickDiffInt(2,5,bB1);
+
+            const aTotal = bA1*aItems[0].per + bA2*aItems[1].per;
+            const allTotal = aTotal + bB1*bItems[0].per + bB2*bItems[1].per;
 
             return Q([
-              partInteger("n7_5_nc_s2a", `A warehouse packs items into boxes.${table}<br><b>(a)</b> The warehouse packs <b>${bGloves}</b> boxes of gloves and <b>${bBottles}</b> boxes of bottles.<br>Work out the number of items packed. <span class="endmark">[2]</span>`, 2, aTotal),
-              partInteger("n7_5_nc_s2b", `<b>(b)</b> It also packs <b>${bTins}</b> boxes of tins and <b>${bSponges}</b> boxes of sponges.<br>Work out the <b>TOTAL</b> number of items packed altogether for <b>ALL</b> boxes. <span class="endmark">[3]</span>`, 3, allTotal),
+              partInteger("n7_5_nc_s2a", `A warehouse packs items into boxes.${table}<br><b>(a)</b> The warehouse packs <b>${bA1}</b> ${aItems[0].phrase} and <b>${bA2}</b> ${aItems[1].phrase}.<br>Work out the number of items packed. <span class="endmark">[2]</span>`, 2, aTotal),
+              partInteger("n7_5_nc_s2b", `<b>(b)</b> It also packs <b>${bB1}</b> ${bItems[0].phrase} and <b>${bB2}</b> ${bItems[1].phrase}.<br>Work out the <b>TOTAL</b> number of items packed altogether for <b>ALL</b> boxes. <span class="endmark">[3]</span>`, 3, allTotal),
             ]);
           }
 
@@ -1128,18 +1169,30 @@ if(marksTotal===5){
               <tr><td>Badminton</td><td class="num">${bad}</td></tr>
             </table>`;
 
-          const nSwim = rng.int(2,5);
-          const nYoga = pickDiffInt(2,5,nSwim);
-          const nFit = rng.int(2,5);
-          const nBad = pickDiffInt(2,5,nFit);
+          const sessions = [
+            {name:"Swimming", plural:"swimming sessions", mins:swim},
+            {name:"Fitness class", plural:"fitness classes", mins:fit},
+            {name:"Yoga", plural:"yoga sessions", mins:yoga},
+            {name:"Badminton", plural:"badminton sessions", mins:bad},
+          ];
 
-          const week1 = nSwim*swim + nYoga*yoga;
-          const week2 = nFit*fit + nBad*bad;
+          // Randomise which session types are used in week 1 and week 2 (and the order mentioned)
+          const chosen = rng.shuffle(sessions);
+          const week1Sessions = chosen.slice(0,2);
+          const week2Sessions = chosen.slice(2);
+
+          const n1 = rng.int(2,5);
+          const n2 = pickDiffInt(2,5,n1);
+          const n3 = rng.int(2,5);
+          const n4 = pickDiffInt(2,5,n3);
+
+          const week1 = n1*week1Sessions[0].mins + n2*week1Sessions[1].mins;
+          const week2 = n3*week2Sessions[0].mins + n4*week2Sessions[1].mins;
           const left = 2000 - (week1 + week2);
 
           return Q([
-            partInteger("n7_5_nc_s3a", `A leisure centre runs sessions.${table}<br><b>(a)</b> In one week, the centre runs <b>${nSwim}</b> swimming sessions and <b>${nYoga}</b> yoga sessions.<br>Work out the total minutes. <span class="endmark">[2]</span>`, 2, week1),
-            partInteger("n7_5_nc_s3b", `<b>(b)</b> In the next week, it runs <b>${nFit}</b> fitness classes and <b>${nBad}</b> badminton sessions.<br>A member has <b>2000</b> minutes available across both weeks.<br>Work out how many minutes are left. <span class="endmark">[3]</span>`, 3, left),
+            partInteger("n7_5_nc_s3a", `A leisure centre runs sessions.${table}<br><b>(a)</b> In one week, the centre runs <b>${n1}</b> ${week1Sessions[0].plural} and <b>${n2}</b> ${week1Sessions[1].plural}.<br>Work out the total minutes. <span class="endmark">[2]</span>`, 2, week1),
+            partInteger("n7_5_nc_s3b", `<b>(b)</b> In the next week, it runs <b>${n3}</b> ${week2Sessions[0].plural} and <b>${n4}</b> ${week2Sessions[1].plural}.<br>A member has <b>2000</b> minutes available across both weeks.<br>Work out how many minutes are left. <span class="endmark">[3]</span>`, 3, left),
           ]);
         }
       }
@@ -1161,7 +1214,7 @@ if(marksTotal===5){
           const mins = rng.int(12, 30);
           const total = roundTo(rate * mins, 1);
           return Q([
-            partNumber("n7_1_c_s2", `A machine packs <b>${fmt(rate,1)}</b> boxes per minute. How many boxes in <b>${mins}</b> minutes? Give your answer to <b>1</b> decimal place. <span class="endmark">[1]</span>`, 1, total),
+            partNumber("n7_1_c_s2", `A pump moves <b>${fmt(rate,1)}</b> litres of water per minute. It runs for <b>${mins}</b> minutes. Work out the total litres of water moved. Give your answer to <b>1</b> decimal place. <span class="endmark">[1]</span>`, 1, total),
           ]);
         }
 
@@ -1187,7 +1240,7 @@ if(marksTotal===5){
           const nBook = rng.int(10, 25);
           const total = roundTo(perBook*nBook, 2);
           return Q([
-            partNumber("n7_2_c_s2", `A printer makes <b>${fmt(perBook,1)}</b> pages per booklet. It prints <b>${nBook}</b> booklets. Work out the total pages. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, total),
+            partNumber("n7_2_c_s2", `A printer uses <b>${fmt(perBook,1)}</b> g of ink for each booklet. It prints <b>${nBook}</b> booklets. Work out the total mass of ink used, in g. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, total),
           ]);
         }
 
@@ -1202,11 +1255,28 @@ if(marksTotal===5){
       if(marksTotal===3){
         if(sc===1){
           const price = money2dp(1000, 2599);
-          const bought = rng.choice([30,33,36,39,42,45]);
-          const payFor = Math.floor(bought/3)*2;
+
+          const offers = [
+            {buy:3, pay:2},
+            {buy:4, pay:3},
+            {buy:5, pay:4},
+            {buy:4, pay:2},
+            {buy:5, pay:3},
+          ];
+          const offer = rng.choice(offers);
+
+          const mult = (offer.buy===3)
+            ? rng.int(10,15)
+            : (offer.buy===4)
+              ? rng.int(8,12)
+              : rng.int(6,10);
+
+          const bought = mult * offer.buy;
+          const payFor = mult * offer.pay;
+
           const total = roundTo(price*payFor, 2);
           return Q([
-            partMoney("n7_3_c_s1", `A café sells muffins for <b>£${price.toFixed(2)}</b> each.<br>Offer: “Buy <b>3</b> muffins for the price of <b>2</b>.”<br>A customer buys <b>${bought}</b> muffins.<br>Work out the total cost using the offer. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, total),
+            partMoney("n7_3_c_s1", `A café sells muffins for <b>£${price.toFixed(2)}</b> each.<br>Offer: “Buy <b>${offer.buy}</b> muffins for the price of <b>${offer.pay}</b>.”<br>A customer buys <b>${bought}</b> muffins.<br>Work out the total cost using the offer. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, total),
           ]);
         }
         if(sc===2){
@@ -1376,25 +1446,35 @@ if(marksTotal===5){
               <tr><td>Ruler</td><td class="num">£${ruler.toFixed(2)}</td></tr>
             </table>`;
 
-          let qPlanner, qPen, qCalc, qRuler;
+          const items = [
+            {name:"Planner", plural:"planners", cost:planner},
+            {name:"Pen pack", plural:"pen packs", cost:pen},
+            {name:"Calculator", plural:"calculators", cost:calc},
+            {name:"Ruler", plural:"rulers", cost:ruler},
+          ];
+          const chosenItems = rng.shuffle(items);
+          const aItems = chosenItems.slice(0,2);
+          const bItems = chosenItems.slice(2);
+
+          let qA1, qA2, qB1, qB2;
           let aTotal, allTotal, change;
 
           for(let tries=0; tries<300; tries++){
-            qPlanner = rng.int(2,5);
-            qPen = pickDiffInt(2,5,qPlanner);
-            qCalc = rng.int(2,5);
-            qRuler = pickDiffInt(2,5,qCalc);
+            qA1 = rng.int(2,5);
+            qA2 = pickDiffInt(2,5,qA1);
+            qB1 = rng.int(2,5);
+            qB2 = pickDiffInt(2,5,qB1);
 
-            aTotal = roundTo(qPlanner*planner + qPen*pen, 2);
-            allTotal = roundTo(aTotal + qCalc*calc + qRuler*ruler, 2);
+            aTotal = roundTo(qA1*aItems[0].cost + qA2*aItems[1].cost, 2);
+            allTotal = roundTo(aTotal + qB1*bItems[0].cost + qB2*bItems[1].cost, 2);
             change = roundTo(100 - allTotal, 2);
 
             if(change >= 0) break;
           }
 
           return Q([
-            partMoney("n7_5_c_s1a", `A school shop sells items.${table}<br><b>(a)</b> A student buys <b>${qPlanner}</b> planners and <b>${qPen}</b> pen packs.<br>Work out the total cost. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, aTotal),
-            partMoney("n7_5_c_s1b", `<b>(b)</b> The student also buys <b>${qCalc}</b> calculators and <b>${qRuler}</b> rulers.<br>They pay with <b>£100</b>.<br>Work out the change they get. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, change),
+            partMoney("n7_5_c_s1a", `A school shop sells items.${table}<br><b>(a)</b> A student buys <b>${qA1}</b> ${aItems[0].plural} and <b>${qA2}</b> ${aItems[1].plural}.<br>Work out the total cost. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, aTotal),
+            partMoney("n7_5_c_s1b", `<b>(b)</b> The student also buys <b>${qB1}</b> ${bItems[0].plural} and <b>${qB2}</b> ${bItems[1].plural}.<br>They pay with <b>£100</b>.<br>Work out the change they get. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, change),
           ]);
         }
 
@@ -1625,15 +1705,26 @@ if(marksTotal===5){
             ]);
           }else{
             const people = rng.choice([6,7,8,9,12]);
+
+            const fracOpts = [
+              {n:1,d:3, text:"one-third"},
+              {n:1,d:4, text:"one-quarter"},
+              {n:3,d:4, text:"three-quarters"},
+              {n:1,d:5, text:"one-fifth"},
+              {n:2,d:5, text:"two-fifths"},
+            ];
+            const frac = rng.choice(fracOpts);
+
             let shareP;
-            do{ shareP = pickPence(800, 5000); }while(shareP%4!==0);
+            do{ shareP = pickPence(800, 5000); }while(shareP%frac.d!==0);
             const totalP = shareP*people;
-            const charityP = shareP/4;
+            const charityP = shareP*frac.n/frac.d;
 
             return Q([
               partMoney("n8_3ac", `<b>(a)</b> <b>£${fmtNo00(totalP/100,2)}</b> is shared equally between <b>${people}</b> people. Work out how much each person gets. Give your answer to <b>2</b> decimal places. <span class="endmark">[1]</span>`, 1, roundTo(shareP/100,2)),
-              partMoney("n8_3bc", `<b>(b)</b> Each person gives <b>one-quarter</b> of their share to charity.<br>Work out how much money each person gives. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, roundTo(charityP/100,2)),
+              partMoney("n8_3bc", `<b>(b)</b> Each person gives <b>${frac.text}</b> of their share to charity.<br>Work out how much money each person gives. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, roundTo(charityP/100,2)),
             ]);
+
           }
         }
 
@@ -1752,19 +1843,35 @@ if(marksTotal===5){
             const popcorn = rng.int(3,7);
             const sweets = rng.int(2,6);
 
-            const peopleShareA = 3; // share popcorn cost
+            const peopleShareA = 3; // share first item cost
             const peopleShareB = 6; // share leftover
-            const popcornCost = 6*popcorn;          // total popcorn spend
-            const eachA = popcornCost/peopleShareA; // exact integer
 
-            // Construct budget so "as much as possible" on tickets leaves a remainder divisible by 6
-            const k = rng.int(8,16); // number of tickets bought
-            const remainderOptions = [];
-            for(let r=0; r<ticket; r++){
+            const items = [
+              {name:"Ticket", plural:"tickets", cost:ticket},
+              {name:"Drink", plural:"drinks", cost:drink},
+              {name:"Popcorn", plural:"popcorns", cost:popcorn},
+              {name:"Sweets", plural:"sweets", cost:sweets},
+            ];
+
+            // Randomise which item is used in (a) and which item is used in (b)
+            const pick = rng.shuffle(items).slice(0,2);
+            const shareItem = pick[0];
+            const spendItem = pick[1];
+
+            const shareCost = 6*shareItem.cost;          // total spend for part (a)
+            const eachA = shareCost/peopleShareA;        // exact integer (6/3 = 2)
+
+            // Construct a budget so that "as much as possible" on spendItem leaves a remainder divisible by 6
+            const k = rng.int(8,16); // number of spendItem bought
+            let remainderOptions = [];
+            for(let r=0; r<spendItem.cost; r++){
               if(r%peopleShareB===0) remainderOptions.push(r);
             }
-            const rem = rng.choice(remainderOptions.length?remainderOptions:[0]);
-            const budget = popcornCost + ticket*k + rem;
+            // Prefer a non-zero remainder when possible
+            const nonZero = remainderOptions.filter(r=>r!==0);
+            const rem = rng.choice((nonZero.length?nonZero:remainderOptions.length?remainderOptions:[0]));
+
+            const budget = shareCost + spendItem.cost*k + rem;
             const eachB = rem/peopleShareB;
 
             const table = `
@@ -1777,8 +1884,8 @@ if(marksTotal===5){
               </table>`;
 
             return Q([
-              partMoney("n8_4a", `A group has <b>£${budget}</b> to spend. Prices are shown below.${table}<br><b>(a)</b> The group buys <b>6</b> popcorns and shares the cost equally between <b>3</b> people.<br>Work out how much <b>EACH</b> person pays. <span class="endmark">[1]</span>`, 1, eachA),
-              partMoney("n8_4b", `<b>(b)</b> The group then spends as much of the remaining money as possible on tickets.<br>The money left after buying the tickets is shared equally between <b>6</b> people.<br>Work out how much <b>EACH</b> person gets. <span class="endmark">[3]</span>`, 3, eachB),
+              partMoney("n8_4a", `A group has <b>£${budget}</b> to spend. Prices are shown below.${table}<br><b>(a)</b> The group buys <b>6</b> ${shareItem.plural} and shares the cost equally between <b>${peopleShareA}</b> people.<br>Work out how much <b>EACH</b> person pays. <span class="endmark">[1]</span>`, 1, eachA),
+              partMoney("n8_4b", `<b>(b)</b> The group then spends as much of the remaining money as possible on ${spendItem.plural}.<br>The money left after buying the ${spendItem.plural} is shared equally between <b>${peopleShareB}</b> people.<br>Work out how much <b>EACH</b> person gets. <span class="endmark">[3]</span>`, 3, eachB),
             ]);
           }else{
             const ticketP = pickPence(750, 1500);
@@ -1789,16 +1896,29 @@ if(marksTotal===5){
             const peopleShareA = 3;
             const peopleShareB = 6;
 
-            const popcornCostP = 6*popcornP;
-            const eachA = roundTo((popcornCostP/peopleShareA)/100,2);
+            const items = [
+              {name:"Ticket", plural:"tickets", cost:ticketP},
+              {name:"Drink", plural:"drinks", cost:drinkP},
+              {name:"Popcorn", plural:"popcorns", cost:popcornP},
+              {name:"Sweets", plural:"sweets", cost:sweetsP},
+            ];
+
+            const pick = rng.shuffle(items).slice(0,2);
+            const shareItem = pick[0];
+            const spendItem = pick[1];
+
+            const shareCostP = 6*shareItem.cost;
+            const eachA = roundTo((shareCostP/peopleShareA)/100,2);
 
             const k = rng.int(8,16);
-            const remOptions=[];
-            for(let r=0; r<ticketP; r++){
-              if(r%peopleShareB===0) remOptions.push(r);
+            let remainderOptions = [];
+            for(let r=0; r<spendItem.cost; r++){
+              if(r%peopleShareB===0) remainderOptions.push(r);
             }
-            const remP = rng.choice(remOptions.length?remOptions:[0]);
-            const budgetP = popcornCostP + ticketP*k + remP;
+            const nonZero = remainderOptions.filter(r=>r!==0);
+            const remP = rng.choice((nonZero.length?nonZero:remainderOptions.length?remainderOptions:[0]));
+
+            const budgetP = shareCostP + spendItem.cost*k + remP;
             const eachB = roundTo((remP/peopleShareB)/100,2);
 
             const table = `
@@ -1811,8 +1931,8 @@ if(marksTotal===5){
               </table>`;
 
             return Q([
-              partMoney("n8_4ac", `A group has <b>£${fmtNo00(budgetP/100,2)}</b> to spend. Prices are shown below.${table}<br><b>(a)</b> The group buys <b>6</b> popcorns and shares the cost equally between <b>3</b> people.<br>Work out how much <b>EACH</b> person pays. Give your answer to <b>2</b> decimal places. <span class="endmark">[1]</span>`, 1, eachA),
-              partMoney("n8_4bc", `<b>(b)</b> The group then spends as much of the remaining money as possible on tickets.<br>The money left after buying the tickets is shared equally between <b>6</b> people.<br>Work out how much <b>EACH</b> person gets. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachB),
+              partMoney("n8_4ac", `A group has <b>£${fmtNo00(budgetP/100,2)}</b> to spend. Prices are shown below.${table}<br><b>(a)</b> The group buys <b>6</b> ${shareItem.plural} and shares the cost equally between <b>${peopleShareA}</b> people.<br>Work out how much <b>EACH</b> person pays. Give your answer to <b>2</b> decimal places. <span class="endmark">[1]</span>`, 1, eachA),
+              partMoney("n8_4bc", `<b>(b)</b> The group then spends as much of the remaining money as possible on ${spendItem.plural}.<br>The money left after buying the ${spendItem.plural} is shared equally between <b>${peopleShareB}</b> people.<br>Work out how much <b>EACH</b> person gets. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachB),
             ]);
           }
         }
@@ -1831,16 +1951,26 @@ if(marksTotal===5){
             const eachKg = rng.int(2,8);
             const totalKg = eachKg*groups;
 
-            // (b) bags needed + share bags equally
-            let bLarge = rng.int(3,10);
-            let bSmall = rng.int(2,10);
-            while((bLarge+bSmall)%4!==0){
-              bLarge = rng.int(3,10);
-              bSmall = rng.int(2,10);
+            // (b) pick two bag sizes at random (and share total bags equally)
+            const bagTypes = [
+              {label:"extra large", mass:xlarge},
+              {label:"large", mass:large},
+              {label:"medium", mass:medium},
+              {label:"small", mass:small},
+            ];
+            const chosenBags = rng.shuffle(bagTypes).slice(0,2);
+            const bag1 = chosenBags[0];
+            const bag2 = chosenBags[1];
+
+            let b1 = rng.int(2,10);
+            let b2 = rng.int(2,10);
+            while((b1+b2)%4!==0){
+              b1 = rng.int(2,10);
+              b2 = rng.int(2,10);
             }
-            const reqLarge = (bLarge-1)*large + rng.int(1,large);
-            const reqSmall = (bSmall-1)*small + rng.int(1,small);
-            const ansBags = (bLarge+bSmall)/4;
+            const req1 = (b1-1)*bag1.mass + rng.int(1,bag1.mass);
+            const req2 = (b2-1)*bag2.mass + rng.int(1,bag2.mass);
+            const ansBags = (b1+b2)/4;
 
             const table = `
               <table class="qtable">
@@ -1853,7 +1983,7 @@ if(marksTotal===5){
 
             return Q([
               partInteger("n8_4p_a", `Compost is sold in bags. The mass of each bag is shown.${table}<br><b>(a)</b> <b>${totalKg} kg</b> of compost is shared equally between <b>${groups}</b> groups.<br>Work out the mass <b>EACH</b> group gets. <span class="endmark">[1]</span>`, 1, eachKg),
-              partInteger("n8_4p_b", `<b>(b)</b> A garden needs <b>${reqLarge} kg</b> of compost in large bags and <b>${reqSmall} kg</b> in small bags.<br>Bags must be bought as whole bags.<br>The <b>TOTAL</b> number of bags bought is shared equally between <b>4</b> gardeners.<br>Work out how many bags <b>EACH</b> gardener receives. <span class="endmark">[3]</span>`, 3, ansBags),
+              partInteger("n8_4p_b", `<b>(b)</b> A garden needs <b>${req1} kg</b> of compost in ${bag1.label} bags and <b>${req2} kg</b> in ${bag2.label} bags.<br>Bags must be bought as whole bags.<br>The <b>TOTAL</b> number of bags bought is shared equally between <b>4</b> gardeners.<br>Work out how many bags <b>EACH</b> gardener receives. <span class="endmark">[3]</span>`, 3, ansBags),
             ]);
           }else{
             // masses with decimals (hundredths kg)
@@ -1870,15 +2000,25 @@ if(marksTotal===5){
             if(eachC%100===0) eachC+=13;
             const totalC = eachC*groups;
 
-            let bLarge = rng.int(3,10);
-            let bSmall = rng.int(2,10);
-            while((bLarge+bSmall)%4!==0){
-              bLarge = rng.int(3,10);
-              bSmall = rng.int(2,10);
+            const bagTypes = [
+              {label:"extra large", mass:xlargeC},
+              {label:"large", mass:largeC},
+              {label:"medium", mass:mediumC},
+              {label:"small", mass:smallC},
+            ];
+            const chosenBags = rng.shuffle(bagTypes).slice(0,2);
+            const bag1 = chosenBags[0];
+            const bag2 = chosenBags[1];
+
+            let b1 = rng.int(2,10);
+            let b2 = rng.int(2,10);
+            while((b1+b2)%4!==0){
+              b1 = rng.int(2,10);
+              b2 = rng.int(2,10);
             }
-            const reqLargeC = (bLarge-1)*largeC + rng.int(1,largeC);
-            const reqSmallC = (bSmall-1)*smallC + rng.int(1,smallC);
-            const ansBags = (bLarge+bSmall)/4;
+            const req1C = (b1-1)*bag1.mass + rng.int(1,bag1.mass);
+            const req2C = (b2-1)*bag2.mass + rng.int(1,bag2.mass);
+            const ansBags = (b1+b2)/4;
 
             const table = `
               <table class="qtable">
@@ -1891,7 +2031,7 @@ if(marksTotal===5){
 
             return Q([
               partNumber("n8_4pc_a", `Compost is sold in bags. The mass of each bag is shown.${table}<br><b>(a)</b> <b>${fmtNo00(totalC/100,2)} kg</b> of compost is shared equally between <b>${groups}</b> groups.<br>Work out the mass <b>EACH</b> group gets. Give your answer to <b>2</b> decimal places. <span class="endmark">[1]</span>`, 1, roundTo(eachC/100,2)),
-              partInteger("n8_4pc_b", `<b>(b)</b> A garden needs <b>${fmtNo00(reqLargeC/100,2)} kg</b> of compost in large bags and <b>${fmtNo00(reqSmallC/100,2)} kg</b> in small bags.<br>Bags must be bought as whole bags.<br>The <b>TOTAL</b> number of bags bought is shared equally between <b>4</b> gardeners.<br>Work out how many bags <b>EACH</b> gardener receives. <span class="endmark">[3]</span>`, 3, ansBags),
+              partInteger("n8_4pc_b", `<b>(b)</b> A garden needs <b>${fmtNo00(req1C/100,2)} kg</b> of compost in ${bag1.label} bags and <b>${fmtNo00(req2C/100,2)} kg</b> in ${bag2.label} bags.<br>Bags must be bought as whole bags.<br>The <b>TOTAL</b> number of bags bought is shared equally between <b>4</b> gardeners.<br>Work out how many bags <b>EACH</b> gardener receives. <span class="endmark">[3]</span>`, 3, ansBags),
             ]);
           }
         }
@@ -1903,13 +2043,30 @@ if(marksTotal===5){
           const rural = rng.int(7,11);
           const short = rng.int(4,7);
 
-          // (a)
-          const ruralTrips = rng.int(4,10);
-          const ruralLitres = ruralTrips*rural;
+          const tripTypes = [
+            {label:"City", word:"city", fuel:city},
+            {label:"Motorway", word:"motorway", fuel:motorway},
+            {label:"Rural", word:"rural", fuel:rural},
+            {label:"Short", word:"short", fuel:short},
+          ];
 
-          // (b) build total so short trips work out exactly
-          const shortTrips = rng.int(6,16);
-          const totalFuel = 5*city + 3*motorway + shortTrips*short;
+          // (a) choose a random trip type to ask about
+          const tripA = rng.choice(tripTypes);
+          const tripsA = rng.int(4,10);
+          const usedA = tripsA*tripA.fuel;
+
+          // (b) choose a different trip type for the remaining fuel, and randomise the two "fixed" trip types
+          const tripB = rng.choice(tripTypes.filter(t=>t.word!==tripA.word));
+          const others = tripTypes.filter(t=>t.word!==tripB.word);
+          const fixed = rng.shuffle(others).slice(0,2); // two different trip types, not tripB
+
+          const fixed1 = fixed[0];
+          const fixed2 = fixed[1];
+          const fixedCount1 = 5;
+          const fixedCount2 = 3;
+
+          const tripsB = rng.int(6,16);
+          const totalFuel = fixedCount1*fixed1.fuel + fixedCount2*fixed2.fuel + tripsB*tripB.fuel;
 
           const table = `
             <table class="qtable">
@@ -1921,21 +2078,38 @@ if(marksTotal===5){
             </table>`;
 
           return Q([
-            partInteger("n8_4f_a", `Fuel used per trip is shown.${table}<br><b>(a)</b> <b>${ruralLitres}</b> litres of fuel are used on rural trips only.<br>How many rural trips is that? <span class="endmark">[1]</span>`, 1, ruralTrips),
-            partInteger("n8_4f_b", `<b>(b)</b> A driver has <b>${totalFuel}</b> litres of fuel available for the day.<br>They make <b>5</b> city trips and <b>3</b> motorway trips.<br>The fuel left is used for short trips only.<br>Work out how many short trips can be made. <span class="endmark">[3]</span>`, 3, shortTrips),
+            partInteger("n8_4f_a", `Fuel used per trip is shown.${table}<br><b>(a)</b> <b>${usedA}</b> litres of fuel are used on ${tripA.word} trips only.<br>How many ${tripA.word} trips is that? <span class="endmark">[1]</span>`, 1, tripsA),
+            partInteger("n8_4f_b", `<b>(b)</b> A driver has <b>${totalFuel}</b> litres of fuel available for the day.<br>They make <b>${fixedCount1}</b> ${fixed1.word} trips and <b>${fixedCount2}</b> ${fixed2.word} trips.<br>The fuel left is used for ${tripB.word} trips only.<br>Work out how many ${tripB.word} trips can be made. <span class="endmark">[3]</span>`, 3, tripsB),
           ]);
         }else{
           // use hundredths of litres to keep exact
-          const cityC = pickPence(650, 900);      // 6.50–9.00 L
+          const cityC = pickPence(650, 900);       // 6.50–9.00 L
           const motorwayC = pickPence(1050, 1500); // 10.50–15.00 L
           const ruralC = pickPence(750, 1250);     // 7.50–12.50 L
           const shortC = pickPence(450, 850);      // 4.50–8.50 L
 
-          const ruralTrips = rng.int(4,10);
-          const ruralLitresC = ruralTrips*ruralC;
+          const tripTypes = [
+            {label:"City", word:"city", fuel:cityC},
+            {label:"Motorway", word:"motorway", fuel:motorwayC},
+            {label:"Rural", word:"rural", fuel:ruralC},
+            {label:"Short", word:"short", fuel:shortC},
+          ];
 
-          const shortTrips = rng.int(6,16);
-          const totalFuelC = 5*cityC + 3*motorwayC + shortTrips*shortC;
+          const tripA = rng.choice(tripTypes);
+          const tripsA = rng.int(4,10);
+          const usedAC = tripsA*tripA.fuel;
+
+          const tripB = rng.choice(tripTypes.filter(t=>t.word!==tripA.word));
+          const others = tripTypes.filter(t=>t.word!==tripB.word);
+          const fixed = rng.shuffle(others).slice(0,2);
+
+          const fixed1 = fixed[0];
+          const fixed2 = fixed[1];
+          const fixedCount1 = 5;
+          const fixedCount2 = 3;
+
+          const tripsB = rng.int(6,16);
+          const totalFuelC = fixedCount1*fixed1.fuel + fixedCount2*fixed2.fuel + tripsB*tripB.fuel;
 
           const table = `
             <table class="qtable">
@@ -1947,8 +2121,8 @@ if(marksTotal===5){
             </table>`;
 
           return Q([
-            partInteger("n8_4fc_a", `Fuel used per trip is shown.${table}<br><b>(a)</b> <b>${fmtNo00(ruralLitresC/100,2)}</b> litres of fuel are used on rural trips only.<br>How many rural trips is that? <span class="endmark">[1]</span>`, 1, ruralTrips),
-            partInteger("n8_4fc_b", `<b>(b)</b> A driver has <b>${fmtNo00(totalFuelC/100,2)}</b> litres of fuel available for the day.<br>They make <b>5</b> city trips and <b>3</b> motorway trips.<br>The fuel left is used for short trips only.<br>Work out how many short trips can be made. <span class="endmark">[3]</span>`, 3, shortTrips),
+            partInteger("n8_4fc_a", `Fuel used per trip is shown.${table}<br><b>(a)</b> <b>${fmtNo00(usedAC/100,2)}</b> litres of fuel are used on ${tripA.word} trips only.<br>How many ${tripA.word} trips is that? <span class="endmark">[1]</span>`, 1, tripsA),
+            partInteger("n8_4fc_b", `<b>(b)</b> A driver has <b>${fmtNo00(totalFuelC/100,2)}</b> litres of fuel available for the day.<br>They make <b>${fixedCount1}</b> ${fixed1.word} trips and <b>${fixedCount2}</b> ${fixed2.word} trips.<br>The fuel left is used for ${tripB.word} trips only.<br>Work out how many ${tripB.word} trips can be made. <span class="endmark">[3]</span>`, 3, tripsB),
           ]);
         }
       }
@@ -1959,15 +2133,37 @@ if(marksTotal===5){
           // Scenario 1 (Money: split + change then split) — table
           if(!isCalc){
             const pay = 200;
-            let meal, drink, dessert, side, totalCost, change;
+
+            let meal, drink, dessert, side;
+            let aItem, bItem1, bItem2;
+            let qB1, qB2;
+            let totalCost, change;
+
             let guard=0;
             do{
               meal = rng.int(10,18);
               drink = rng.int(2,6);
               dessert = rng.int(3,8);
-              side = rng.int(2,6); // not used (kept for table completeness)
-              totalCost = 8*meal + 6*drink + 3*dessert;
+              side = rng.int(2,6); // kept for table completeness
+
+              const items = [
+                {name:"Meal", plural:"meals", cost:meal},
+                {name:"Drink", plural:"drinks", cost:drink},
+                {name:"Dessert", plural:"desserts", cost:dessert},
+                {name:"Side", plural:"sides", cost:side},
+              ];
+
+              const chosen = rng.shuffle(items);
+              aItem = chosen[0];
+
+              const bPair = rng.shuffle(chosen.slice(1,3));
+              const qtyAssign = rng.shuffle([6,3]);
+              bItem1 = bPair[0]; qB1 = qtyAssign[0];
+              bItem2 = bPair[1]; qB2 = qtyAssign[1];
+
+              totalCost = 8*aItem.cost + qB1*bItem1.cost + qB2*bItem2.cost;
               change = pay - totalCost;
+
               guard++;
             }while((change<=0 || change%5!==0) && guard<500);
 
@@ -1980,26 +2176,48 @@ if(marksTotal===5){
                 <tr><td>Side</td><td class="num">£${side}</td></tr>
               </table>`;
 
-            const eachPays = (8*meal)/4; // = 2*meal
+            const eachPays = (8*aItem.cost)/4; // = 2 × item cost
             const eachGets = change/5;
 
             return Q([
-              partMoney("n8_5a", `Prices are shown below.${table}<br><b>(a)</b> A group buys <b>8</b> meals.<br>They share the cost equally between <b>4</b> people.<br>Work out how much <b>EACH</b> person pays. <span class="endmark">[2]</span>`, 2, eachPays),
-              partMoney("n8_5b", `<b>(b)</b> The group also buys <b>6</b> drinks and <b>3</b> desserts.<br>They pay with <b>£${pay}</b>.<br>The change is shared equally between <b>5</b> people.<br>Work out how much <b>EACH</b> person gets. <span class="endmark">[3]</span>`, 3, eachGets),
+              partMoney("n8_5m_a", `A café has a menu.${table}<br><b>(a)</b> A group buys <b>8</b> ${aItem.plural}.<br>They share the cost equally between <b>4</b> people.<br>Work out how much <b>EACH</b> person pays. <span class="endmark">[2]</span>`, 2, eachPays),
+              partMoney("n8_5m_b", `<b>(b)</b> The group also buys <b>${qB1}</b> ${bItem1.plural} and <b>${qB2}</b> ${bItem2.plural}.<br>They pay with <b>£${pay}</b>.<br>The change is shared equally between <b>5</b> people.<br>Work out how much <b>EACH</b> person gets. <span class="endmark">[3]</span>`, 3, eachGets),
             ]);
           }else{
-            const payP = 22000;
-            let mealP, drinkP, dessertP, sideP, totalCostP, changeP;
+            const payP = 20000;
+
+            let mealP, drinkP, dessertP, sideP;
+            let aItem, bItem1, bItem2;
+            let qB1, qB2;
+            let totalCostP, changeP;
+
             let guard=0;
             do{
-              mealP = pickPence(1000, 1800);
-              drinkP = pickPence(250, 700);
-              dessertP = pickPence(350, 900);
-              sideP = pickPence(250, 800); // table completeness
-              totalCostP = 8*mealP + 6*drinkP + 3*dessertP;
+              mealP = pickPence(1000, 1899);
+              drinkP = pickPence(200, 699);
+              dessertP = pickPence(300, 899);
+              sideP = pickPence(200, 699);
+
+              const items = [
+                {name:"Meal", plural:"meals", cost:mealP},
+                {name:"Drink", plural:"drinks", cost:drinkP},
+                {name:"Dessert", plural:"desserts", cost:dessertP},
+                {name:"Side", plural:"sides", cost:sideP},
+              ];
+
+              const chosen = rng.shuffle(items);
+              aItem = chosen[0];
+
+              const bPair = rng.shuffle(chosen.slice(1,3));
+              const qtyAssign = rng.shuffle([6,3]);
+              bItem1 = bPair[0]; qB1 = qtyAssign[0];
+              bItem2 = bPair[1]; qB2 = qtyAssign[1];
+
+              totalCostP = 8*aItem.cost + qB1*bItem1.cost + qB2*bItem2.cost;
               changeP = payP - totalCostP;
+
               guard++;
-            }while((changeP<=0 || changeP%5!==0) && guard<800);
+            }while((changeP<=0 || changeP%500!==0) && guard<800); // divisible by 5 people (in pence)
 
             const table = `
               <table class="qtable">
@@ -2010,12 +2228,12 @@ if(marksTotal===5){
                 <tr><td>Side</td><td class="num">£${(sideP/100).toFixed(2)}</td></tr>
               </table>`;
 
-            const eachPays = roundTo((2*mealP)/100,2);
+            const eachPays = roundTo(((8*aItem.cost)/4)/100,2);
             const eachGets = roundTo((changeP/5)/100,2);
 
             return Q([
-              partMoney("n8_5ac", `Prices are shown below.${table}<br><b>(a)</b> A group buys <b>8</b> meals.<br>They share the cost equally between <b>4</b> people.<br>Work out how much <b>EACH</b> person pays. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, eachPays),
-              partMoney("n8_5bc", `<b>(b)</b> The group also buys <b>6</b> drinks and <b>3</b> desserts.<br>They pay with <b>£${fmtNo00(payP/100,2)}</b>.<br>The change is shared equally between <b>5</b> people.<br>Work out how much <b>EACH</b> person gets. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachGets),
+              partMoney("n8_5mc_a", `A café has a menu.${table}<br><b>(a)</b> A group buys <b>8</b> ${aItem.plural}.<br>They share the cost equally between <b>4</b> people.<br>Work out how much <b>EACH</b> person pays. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, eachPays),
+              partMoney("n8_5mc_b", `<b>(b)</b> The group also buys <b>${qB1}</b> ${bItem1.plural} and <b>${qB2}</b> ${bItem2.plural}.<br>They pay with <b>£${(payP/100).toFixed(2)}</b>.<br>The change is shared equally between <b>5</b> people.<br>Work out how much <b>EACH</b> person gets. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachGets),
             ]);
           }
         }
@@ -2160,7 +2378,7 @@ if(marksTotal===5){
               </table>`;
 
             return Q([
-              partPair("n8_5v_a", `Drinks are supplied in containers.${table}<br><b>(a)</b> A sports day has <b>${totalWater}</b> litres of water.<br>They pour the water into the smallest volume container.<br>Work out how many <b>FULL</b> containers they can fill and how many litres are left over. <span class="endmark">[2]</span>`, 2, [fullCount, remainder], {placeholders:["containers","litres"]}),
+              partPair("n8_5v_a", `Drinks are supplied in containers.${table}<br><b>(a)</b> A sports day has <b>${totalWater}</b> litres of water.<br>They pour the water into the smallest volume container.<br>Work out how many <b>FULL</b> containers they can fill and how many litres are left over. <span class="endmark">[2]</span>`, 2, [fullCount, remainder], {placeholders:["containers","litres left over"]}),
               partNumber("n8_5v_b", `<b>(b)</b> Only the water in the <b>FULL</b> containers is used for drinks.<br>This water is shared equally into <b>${jugs}</b> jugs.<br>Then each jug is poured equally into <b>${cups}</b> cups.<br>Work out the volume of water in <b>EACH</b> cup. <span class="endmark">[3]</span>`, 3, eachCup),
             ]);
           }else{
@@ -2195,7 +2413,7 @@ if(marksTotal===5){
               </table>`;
 
             return Q([
-              partPair("n8_5vc_a", `Drinks are supplied in containers.${table}<br><b>(a)</b> A sports day has <b>${fmtNo00(totalWater/100,2)}</b> litres of water.<br>They pour the water into the smallest volume container.<br>Work out how many <b>FULL</b> containers they can fill and how many litres are left over. Round any decimal answers to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, [fullCount, leftover], {placeholders:["containers","litres"]}),
+              partPair("n8_5vc_a", `Drinks are supplied in containers.${table}<br><b>(a)</b> A sports day has <b>${fmtNo00(totalWater/100,2)}</b> litres of water.<br>They pour the water into the smallest volume container.<br>Work out how many <b>FULL</b> containers they can fill and how many litres are left over. Round any decimal answers to <b>2</b> decimal places. <span class="endmark">[2]</span>`, 2, [fullCount, leftover], {placeholders:["containers","litres left over"]}),
               partNumber("n8_5vc_b", `<b>(b)</b> Only the water in the <b>FULL</b> containers is used for drinks.<br>This water is shared equally into <b>${jugs}</b> jugs.<br>Then each jug is poured equally into <b>${cups}</b> cups.<br>Work out the volume of water in <b>EACH</b> cup. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachCup),
             ]);
           }
@@ -2203,27 +2421,59 @@ if(marksTotal===5){
 
         // Scenario 3 (Non-money: sessions + staffing split) — table
         if(!isCalc){
-          let swim = rng.choice([40,45,50,55]);
-          let fitness = rng.choice([55,60,65]);
-          let yoga = rng.choice([35,38,42,45]);
-          let bad = rng.choice([45,50,55]);
           const staff = 7;
 
-          // (a) coach minutes available
-          const yogaSessions = rng.int(5,10);
-          const remainder = rng.int(0, yoga-1);
-          const available = yoga*yogaSessions + remainder;
+          const labels = {
+            swim:{row:"Swimming", plural:"swimming sessions"},
+            fitness:{row:"Fitness class", plural:"fitness classes"},
+            yoga:{row:"Yoga", plural:"yoga sessions"},
+            bad:{row:"Badminton", plural:"badminton sessions"},
+          };
 
-          // (b) total time shared between staff
-          let totalTime = 8*swim + 6*bad;
+          const opts = {
+            swim:[40,45,50,55],
+            fitness:[55,60,65],
+            yoga:[35,38,42,45],
+            bad:[45,50,55],
+          };
+
+          // Pick the two session types used in part (b) (and randomise the order/quantities)
+          const sessionKeys = ["swim","fitness","yoga","bad"];
+          const bKeys = rng.shuffle(sessionKeys).slice(0,2);
+          const counts = rng.shuffle([8,6]);
+          const bKey1 = bKeys[0], bKey2 = bKeys[1];
+          const c1 = counts[0], c2 = counts[1];
+
+          // Choose durations, then tweak the ones used in (b) until the total time shares equally between staff
+          let swim = rng.choice(opts.swim);
+          let fitness = rng.choice(opts.fitness);
+          let yoga = rng.choice(opts.yoga);
+          let bad = rng.choice(opts.bad);
+
+          const getMins = (k)=> (k==="swim")?swim : (k==="fitness")?fitness : (k==="yoga")?yoga : bad;
+          const resample = (k)=>{
+            if(k==="swim") swim = rng.choice(opts.swim);
+            else if(k==="fitness") fitness = rng.choice(opts.fitness);
+            else if(k==="yoga") yoga = rng.choice(opts.yoga);
+            else bad = rng.choice(opts.bad);
+          };
+
+          let totalTime = c1*getMins(bKey1) + c2*getMins(bKey2);
           let guard=0;
-          while(totalTime%staff!==0 && guard<200){
-            swim = rng.choice([40,45,50,55]);
-            bad = rng.choice([45,50,55]);
-            totalTime = 8*swim + 6*bad;
+          while(totalTime%staff!==0 && guard<600){
+            resample(bKey1);
+            resample(bKey2);
+            totalTime = c1*getMins(bKey1) + c2*getMins(bKey2);
             guard++;
           }
           const eachStaff = totalTime/staff;
+
+          // (a) pick a (possibly different) session type for the coach question
+          const aKey = rng.choice(sessionKeys);
+          const aSessions = rng.int(5,10);
+          const aMins = getMins(aKey);
+          const remainder = rng.int(0, aMins-1);
+          const available = aMins*aSessions + remainder;
 
           const table = `
             <table class="qtable">
@@ -2235,30 +2485,62 @@ if(marksTotal===5){
             </table>`;
 
           return Q([
-            partInteger("n8_5s_a", `A leisure centre runs sessions.${table}<br><b>(a)</b> A coach has <b>${available}</b> minutes available.<br>How many whole yoga sessions can be run? <span class="endmark">[2]</span>`, 2, yogaSessions),
-            partInteger("n8_5s_b", `<b>(b)</b> In one day the centre runs <b>8</b> swimming sessions and <b>6</b> badminton sessions.<br>The <b>TOTAL</b> session time is shared equally between <b>${staff}</b> staff to supervise.<br>Work out how many minutes <b>EACH</b> staff member supervises. <span class="endmark">[3]</span>`, 3, eachStaff),
+            partInteger("n8_5s_a", `A leisure centre runs sessions.${table}<br><b>(a)</b> A coach has <b>${available}</b> minutes available.<br>How many whole ${labels[aKey].plural} can be run? <span class="endmark">[2]</span>`, 2, aSessions),
+            partInteger("n8_5s_b", `<b>(b)</b> In one day the centre runs <b>${c1}</b> ${labels[bKey1].plural} and <b>${c2}</b> ${labels[bKey2].plural}.<br>The <b>TOTAL</b> session time is shared equally between <b>${staff}</b> staff to supervise.<br>Work out how many minutes <b>EACH</b> staff member supervises. <span class="endmark">[3]</span>`, 3, eachStaff),
           ]);
         }else{
           // calculator version — hundredths of minutes
-          let swimC = pickPence(4000, 6500);    // 40.00–65.00
-          let fitnessC = pickPence(5500, 7500); // 55.00–75.00
-          let yogaC = pickPence(3500, 5000);    // 35.00–50.00
-          let badC = pickPence(4500, 6500);     // 45.00–65.00
           const staff = 7;
 
-          const yogaSessions = rng.int(5,10);
-          const remainder = rng.int(0, yogaC-1);
-          const availableC = yogaC*yogaSessions + remainder;
+          const labels = {
+            swim:{row:"Swimming", plural:"swimming sessions"},
+            fitness:{row:"Fitness class", plural:"fitness classes"},
+            yoga:{row:"Yoga", plural:"yoga sessions"},
+            bad:{row:"Badminton", plural:"badminton sessions"},
+          };
 
-          let totalTimeC = 8*swimC + 6*badC;
+          const sessionKeys = ["swim","fitness","yoga","bad"];
+          const bKeys = rng.shuffle(sessionKeys).slice(0,2);
+          const counts = rng.shuffle([8,6]);
+          const bKey1 = bKeys[0], bKey2 = bKeys[1];
+          const c1 = counts[0], c2 = counts[1];
+
+          const sample = (k)=>{
+            if(k==="swim") return pickPence(4000, 6500);    // 40.00–65.00
+            if(k==="fitness") return pickPence(5500, 7500); // 55.00–75.00
+            if(k==="yoga") return pickPence(3500, 5000);    // 35.00–50.00
+            return pickPence(4500, 6500);                   // badminton 45.00–65.00
+          };
+
+          let swimC = sample("swim");
+          let fitnessC = sample("fitness");
+          let yogaC = sample("yoga");
+          let badC = sample("bad");
+
+          const getMins = (k)=> (k==="swim")?swimC : (k==="fitness")?fitnessC : (k==="yoga")?yogaC : badC;
+          const resample = (k)=>{
+            const v = sample(k);
+            if(k==="swim") swimC = v;
+            else if(k==="fitness") fitnessC = v;
+            else if(k==="yoga") yogaC = v;
+            else badC = v;
+          };
+
+          let totalTimeC = c1*getMins(bKey1) + c2*getMins(bKey2);
           let guard=0;
-          while(totalTimeC%staff!==0 && guard<400){
-            swimC = pickPence(4000, 6500);
-            badC = pickPence(4500, 6500);
-            totalTimeC = 8*swimC + 6*badC;
+          while(totalTimeC%staff!==0 && guard<900){
+            resample(bKey1);
+            resample(bKey2);
+            totalTimeC = c1*getMins(bKey1) + c2*getMins(bKey2);
             guard++;
           }
           const eachStaff = roundTo((totalTimeC/staff)/100,2);
+
+          const aKey = rng.choice(sessionKeys);
+          const aSessions = rng.int(5,10);
+          const aMinsC = getMins(aKey);
+          const remainder = rng.int(0, aMinsC-1);
+          const availableC = aMinsC*aSessions + remainder;
 
           const table = `
             <table class="qtable">
@@ -2270,8 +2552,8 @@ if(marksTotal===5){
             </table>`;
 
           return Q([
-            partInteger("n8_5sc_a", `A leisure centre runs sessions.${table}<br><b>(a)</b> A coach has <b>${fmtNo00(availableC/100,2)}</b> minutes available.<br>How many whole yoga sessions can be run? <span class="endmark">[2]</span>`, 2, yogaSessions),
-            partNumber("n8_5sc_b", `<b>(b)</b> In one day the centre runs <b>8</b> swimming sessions and <b>6</b> badminton sessions.<br>The <b>TOTAL</b> session time is shared equally between <b>${staff}</b> staff to supervise.<br>Work out how many minutes <b>EACH</b> staff member supervises. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachStaff),
+            partInteger("n8_5sc_a", `A leisure centre runs sessions.${table}<br><b>(a)</b> A coach has <b>${fmtNo00(availableC/100,2)}</b> minutes available.<br>How many whole ${labels[aKey].plural} can be run? <span class="endmark">[2]</span>`, 2, aSessions),
+            partNumber("n8_5sc_b", `<b>(b)</b> In one day the centre runs <b>${c1}</b> ${labels[bKey1].plural} and <b>${c2}</b> ${labels[bKey2].plural}.<br>The <b>TOTAL</b> session time is shared equally between <b>${staff}</b> staff to supervise.<br>Work out how many minutes <b>EACH</b> staff member supervises. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`, 3, eachStaff),
           ]);
         }
       }
@@ -2280,36 +2562,1196 @@ if(marksTotal===5){
       return Q([partInteger("n8_f", `Work out: <b>84 ÷ 7</b>. <span class="endmark">[1]</span>`, 1, 12)]);
     }
     case "N9": {
+      // N9 — Negative numbers (mixed operations) — GCSE style (AQA / Edexcel / OCR)
+      const scenario = rng.int(1,3);
+
+      // Helpers (ensure calculator questions use decimals)
+      const pickCents = (min, max) => {
+        let v;
+        do { v = rng.int(min, max); } while(v % 100 === 0);
+        return v;
+      };
+      const pickTenth = (min, max) => {
+        let v;
+        do { v = rng.int(min, max); } while(v % 10 === 0);
+        return v;
+      };
+      const fmtSignedInt = (n, unit="") => `${n>=0?"+":""}${n}${unit}`;
+      const fmtSigned2dp = (hund, unit="") => `${hund>=0?"+":"-"}${(Math.abs(hund)/100).toFixed(2)}${unit}`;
+      const fmtMoneyStartInt = (v) => (v < 0 ? `-£${Math.abs(v)}` : `£${v}`);
+      const fmtMoneyStart2dp = (p) => (p < 0 ? `-£${(Math.abs(p)/100).toFixed(2)}` : `£${(p/100).toFixed(2)}`);
+      const fmtSignedMoneyInt = (v) => `${v>=0?"+":"-"}£${Math.abs(v)}`;
+      const fmtSignedMoney2dp = (p) => `${p>=0?"+":"-"}£${(Math.abs(p)/100).toFixed(2)}`;
+
+      const mk = (parts) => ({ topicCode, marksTotal, paperMode, parts });
+
+      // =========================================================
+      // 1 MARK (3 scenarios; only scenario 1 is money)
+      // =========================================================
       if(marksTotal===1){
-        const a=rng.int(-20,20), b=rng.int(-20,20);
-        return Q([partInteger("n9_1", `Work out: <b>${a} − (${b})</b>. <span class="endmark">[1]</span>`, 1, a-b)]);
+        // Scenario 1 (Money)
+        if(scenario===1){
+          if(!isCalc){
+            const startAbs = rng.int(5,60);
+            const deposit  = rng.int(5,80);
+            const ans = -startAbs + deposit;
+
+            return mk([
+              partMoney(
+                "n9_1_nc_s1",
+                `A bank account balance is <b>-£${startAbs}</b>.<br>`+
+                `<b>£${deposit}</b> is paid into the account.<br>`+
+                `What is the new balance? <span class="endmark">[1]</span>`,
+                1,
+                ans
+              )
+            ]);
+          } else {
+            const startAbsP = pickCents(500,9000);
+            const depositP  = pickCents(500,9000);
+            const ansP = -startAbsP + depositP;
+
+            return mk([
+              partMoney(
+                "n9_1_c_s1",
+                `A bank account balance is <b>-£${(startAbsP/100).toFixed(2)}</b>.<br>`+
+                `<b>£${(depositP/100).toFixed(2)}</b> is paid into the account.<br>`+
+                `What is the new balance? <span class="endmark">[1]</span>`,
+                1,
+                roundTo(ansP/100,2)
+              )
+            ]);
+          }
+        }
+
+        // Scenario 2 (Temperature)
+        if(scenario===2){
+          if(!isCalc){
+            const start = -rng.int(1,15);
+            const inc   = rng.int(1,20);
+            const ans   = start + inc;
+
+            return mk([
+              partInteger(
+                "n9_1_nc_s2",
+                `The temperature is <b>${start}°C</b>.<br>`+
+                `It increases by <b>${inc}°C</b>.<br>`+
+                `What is the new temperature? <span class="endmark">[1]</span>`,
+                1,
+                ans
+              )
+            ]);
+          } else {
+            const startTenth = pickTenth(10,200);       // 1.0–20.0, not an integer
+            const incHund    = pickCents(100,2500);     // 1.00–25.00, not an integer
+            const start      = -startTenth/10;
+
+            // Work in hundredths for accuracy
+            const ansHund = (-startTenth*10) + incHund;
+            const ans = ansHund/100;
+
+            return mk([
+              partNumber(
+                "n9_1_c_s2",
+                `The temperature is <b>${start.toFixed(1)}°C</b>.<br>`+
+                `It increases by <b>${(incHund/100).toFixed(2)}°C</b>.<br>`+
+                `What is the new temperature? <span class="endmark">[1]</span>`,
+                1,
+                roundTo(ans,2)
+              )
+            ]);
+          }
+        }
+
+        // Scenario 3 (Lift floors)
+        if(!isCalc){
+          const start = -rng.int(1,8);
+          const down  = rng.int(1,10);
+          const ans   = start - down;
+
+          return mk([
+            partInteger(
+              "n9_1_nc_s3",
+              `A lift is at floor <b>${start}</b>.<br>`+
+              `It goes down <b>${down}</b> floors.<br>`+
+              `What floor is it on now? <span class="endmark">[1]</span>`,
+              1,
+              ans
+            )
+          ]);
+        } else {
+          const startInt = rng.int(1,8);
+          const start    = -(startInt + 0.5);
+          const downInt  = rng.int(1,10);
+          const downFrac = rng.choice([0.25,0.5,0.75]);
+          const down     = downInt + downFrac;
+          const ans      = start - down;
+
+          return mk([
+            partNumber(
+              "n9_1_c_s3",
+              `A lift is at a height of <b>${fmt(start,2)} m</b> relative to ground level.<br>`+
+              `It goes down <b>${fmt(down,2)} m</b>.<br>`+
+              `What is its new height? <span class="endmark">[1]</span>`,
+              1,
+              roundTo(ans,2)
+            )
+          ]);
+        }
       }
+
+      // =========================================================
+      // 2 MARK (3 scenarios; only scenario 1 is money)
+      // =========================================================
       if(marksTotal===2){
-        const a=rng.int(-30,30), b=rng.int(-30,30), c=rng.int(-15,15);
-        return Q([
-          partInteger("n9_2a", `Work out: <b>${a} + (${b})</b>. <span class="endmark">[1]</span>`, 1, a+b),
-          partInteger("n9_2b", `Work out: <b>${a} + (${b}) − (${c})</b>. <span class="endmark">[1]</span>`, 1, a+b-c),
-        ]);
+        // Scenario 1 (Money)
+        if(scenario===1){
+          if(!isCalc){
+            const startAbs = rng.int(10,80);
+            const out      = rng.int(5,60);
+            const inp      = rng.int(10,90);
+            const ans      = -startAbs - out + inp;
+
+            return mk([
+              partMoney(
+                "n9_2_nc_s1",
+                `A bank account balance is <b>-£${startAbs}</b>.<br>`+
+                `<b>£${out}</b> is taken out of the account.<br>`+
+                `Then <b>£${inp}</b> is paid in.<br>`+
+                `Work out the final balance. <span class="endmark">[2]</span>`,
+                2,
+                ans
+              )
+            ]);
+          } else {
+            const startAbsP = pickCents(800,12000);
+            const outP      = pickCents(200,9000);
+            const inP       = pickCents(500,12000);
+            const ansP      = -startAbsP - outP + inP;
+
+            return mk([
+              partMoney(
+                "n9_2_c_s1",
+                `A bank account balance is <b>-£${(startAbsP/100).toFixed(2)}</b>.<br>`+
+                `<b>£${(outP/100).toFixed(2)}</b> is taken out of the account.<br>`+
+                `Then <b>£${(inP/100).toFixed(2)}</b> is paid in.<br>`+
+                `Work out the final balance. <span class="endmark">[2]</span>`,
+                2,
+                roundTo(ansP/100,2)
+              )
+            ]);
+          }
+        }
+
+        // Scenario 2 (Temperature with multiplication)
+        if(scenario===2){
+          if(!isCalc){
+            const start = -rng.int(1,12);
+            const fall  = rng.int(1,8);
+            const inc   = rng.int(1,12);
+            const ans   = start - fall*2 + inc;
+
+            return mk([
+              partInteger(
+                "n9_2_nc_s2",
+                `At midnight the temperature is <b>${start}°C</b>.<br>`+
+                `It falls by <b>${fall}°C</b> each hour for <b>2</b> hours.<br>`+
+                `Then it increases by <b>${inc}°C</b>.<br>`+
+                `Work out the final temperature. <span class="endmark">[2]</span>`,
+                2,
+                ans
+              )
+            ]);
+          } else {
+            const startTenth = pickTenth(20,200);   // 2.0–20.0, not an integer
+            const fallHund   = pickCents(50,600);   // 0.50–6.00, not an integer
+            const incTenth   = pickTenth(20,120);   // 2.0–12.0, not an integer
+
+            const start = -startTenth/10;
+
+            // hundredths
+            const ansHund = (-startTenth*10) - (fallHund*2) + (incTenth*10);
+            const ans = ansHund/100;
+
+            return mk([
+              partNumber(
+                "n9_2_c_s2",
+                `At midnight the temperature is <b>${start.toFixed(1)}°C</b>.<br>`+
+                `It falls by <b>${(fallHund/100).toFixed(2)}°C</b> each hour for <b>2</b> hours.<br>`+
+                `Then it increases by <b>${(incTenth/10).toFixed(1)}°C</b>.<br>`+
+                `Work out the final temperature. <span class="endmark">[2]</span>`,
+                2,
+                roundTo(ans,2)
+              )
+            ]);
+          }
+        }
+
+        // Scenario 3 (Elevation)
+        if(!isCalc){
+          const start = -rng.int(5,40);
+          const climb = rng.int(10,70);
+          const down  = rng.int(5,40);
+          const ans   = start + climb - down;
+
+          return mk([
+            partInteger(
+              "n9_2_nc_s3",
+              `A hiker starts at <b>${start} m</b> (below sea level).<br>`+
+              `They climb <b>${climb} m</b>.<br>`+
+              `Then they go down <b>${down} m</b>.<br>`+
+              `Work out their final height relative to sea level. <span class="endmark">[2]</span>`,
+              2,
+              ans
+            )
+          ]);
+        } else {
+          const startTenth = pickTenth(50,350);    // 5.0–35.0, not an integer
+          const climbHund  = pickCents(800,6000);  // 8.00–60.00, not an integer
+          const downTenth  = pickTenth(20,300);    // 2.0–30.0, not an integer
+
+          const start = -startTenth/10;
+
+          // hundredths
+          const ansHund = (-startTenth*10) + climbHund - (downTenth*10);
+          const ans = ansHund/100;
+
+          return mk([
+            partNumber(
+              "n9_2_c_s3",
+              `A hiker starts at <b>${start.toFixed(1)} m</b> (below sea level).<br>`+
+              `They climb <b>${(climbHund/100).toFixed(2)} m</b>.<br>`+
+              `Then they go down <b>${(downTenth/10).toFixed(1)} m</b>.<br>`+
+              `Work out their final height relative to sea level. <span class="endmark">[2]</span>`,
+              2,
+              roundTo(ans,2)
+            )
+          ]);
+        }
       }
+
+      // =========================================================
+      // 3 MARK (3 scenarios; only scenario 1 is money; split into a + b)
+      // =========================================================
       if(marksTotal===3){
-        const a=rng.int(-20,20), b=rng.int(-9,9), c=rng.int(-9,9);
-        const ans = a + b*c;
-        return Q([partInteger("n9_3", `Work out: <b>${a} + ${b} × ${c}</b>. <span class="endmark">[3]</span>`, 3, ans)]);
+        // Scenario 1 (Money)
+        if(scenario===1){
+          if(!isCalc){
+            const startAbs = rng.int(20,80);
+            const deposit  = rng.int(10,60);
+            const payment  = rng.int(3,20);
+
+            const aAns = -startAbs + deposit;
+            const bAns = aAns - 3*payment;
+
+            return mk([
+              partMoney(
+                "n9_3_nc_s1a",
+                `<b>(a)</b> A bank account balance is <b>-£${startAbs}</b>.<br>`+
+                `<b>£${deposit}</b> is paid into the account.<br>`+
+                `Work out the new balance. <span class="endmark">[1]</span>`,
+                1,
+                aAns
+              ),
+              partMoney(
+                "n9_3_nc_s1b",
+                `<b>(b)</b> Then <b>3</b> payments of <b>£${payment}</b> are taken out.<br>`+
+                `Work out the final balance. <span class="endmark">[2]</span>`,
+                2,
+                bAns
+              ),
+            ]);
+          } else {
+            const startAbsP = pickCents(1500,12000);
+            const depositP  = pickCents(500,9000);
+            const paymentP  = pickCents(200,3000);
+
+            const aAnsP = -startAbsP + depositP;
+            const bAnsP = aAnsP - 3*paymentP;
+
+            return mk([
+              partMoney(
+                "n9_3_c_s1a",
+                `<b>(a)</b> A bank account balance is <b>-£${(startAbsP/100).toFixed(2)}</b>.<br>`+
+                `<b>£${(depositP/100).toFixed(2)}</b> is paid into the account.<br>`+
+                `Work out the new balance. <span class="endmark">[1]</span>`,
+                1,
+                roundTo(aAnsP/100,2)
+              ),
+              partMoney(
+                "n9_3_c_s1b",
+                `<b>(b)</b> Then <b>3</b> payments of <b>£${(paymentP/100).toFixed(2)}</b> are taken out.<br>`+
+                `Work out the final balance. <span class="endmark">[2]</span>`,
+                2,
+                roundTo(bAnsP/100,2)
+              ),
+            ]);
+          }
+        }
+
+        // Scenario 2 (Temperature over time)
+        if(scenario===2){
+          if(!isCalc){
+            const start = -rng.int(3,15);
+            const inc   = rng.int(5,20);
+            const drop1 = rng.int(2,10);
+            let   drop2 = rng.int(2,10);
+            if(drop2===drop1) drop2 = drop1 + 1;
+
+            const aAns = start + inc;
+            const bAns = aAns - drop1 - drop2;
+
+            return mk([
+              partInteger(
+                "n9_3_nc_s2a",
+                `<b>(a)</b> At <b>6am</b> the temperature is <b>${start}°C</b>.<br>`+
+                `By midday it increases by <b>${inc}°C</b>.<br>`+
+                `Work out the temperature at midday. <span class="endmark">[1]</span>`,
+                1,
+                aAns
+              ),
+              partInteger(
+                "n9_3_nc_s2b",
+                `<b>(b)</b> Overnight the temperature falls by <b>${drop1}°C</b>.<br>`+
+                `Then it falls by <b>${drop2}°C</b> again.<br>`+
+                `Work out the temperature the next morning. <span class="endmark">[2]</span>`,
+                2,
+                bAns
+              ),
+            ]);
+          } else {
+            const startTenth = pickTenth(20,200);
+            const incHund    = pickCents(300,2000);
+            const drop1Tenth = pickTenth(20,120);
+            const drop2Hund  = pickCents(200,1500);
+
+            const start = -startTenth/10;
+
+            const aAnsHund = (-startTenth*10) + incHund;
+            const bAnsHund = aAnsHund - (drop1Tenth*10) - drop2Hund;
+
+            return mk([
+              partNumber(
+                "n9_3_c_s2a",
+                `<b>(a)</b> At <b>6am</b> the temperature is <b>${start.toFixed(1)}°C</b>.<br>`+
+                `By midday it increases by <b>${(incHund/100).toFixed(2)}°C</b>.<br>`+
+                `Work out the temperature at midday. <span class="endmark">[1]</span>`,
+                1,
+                roundTo(aAnsHund/100,2)
+              ),
+              partNumber(
+                "n9_3_c_s2b",
+                `<b>(b)</b> Overnight the temperature falls by <b>${(drop1Tenth/10).toFixed(1)}°C</b>.<br>`+
+                `Then it falls by <b>${(drop2Hund/100).toFixed(2)}°C</b> again.<br>`+
+                `Work out the temperature the next morning. <span class="endmark">[2]</span>`,
+                2,
+                roundTo(bAnsHund/100,2)
+              ),
+            ]);
+          }
+        }
+
+        // Scenario 3 (Lift with multiplication)
+        if(!isCalc){
+          const start = -rng.int(1,10);
+          const up    = rng.int(3,10);
+          const down  = rng.int(1,6);
+
+          const aAns = start + up;
+          const bAns = aAns - down*4;
+
+          return mk([
+            partInteger(
+              "n9_3_nc_s3a",
+              `<b>(a)</b> A lift is at floor <b>${start}</b>.<br>`+
+              `It goes up <b>${up}</b> floors.<br>`+
+              `Work out the new floor. <span class="endmark">[1]</span>`,
+              1,
+              aAns
+            ),
+            partInteger(
+              "n9_3_nc_s3b",
+              `<b>(b)</b> Then it goes down <b>${down}</b> floors, repeated <b>4</b> times.<br>`+
+              `Work out the final floor. <span class="endmark">[2]</span>`,
+              2,
+              bAns
+            ),
+          ]);
+        } else {
+          const startInt = rng.int(1,10);
+          const startHund = -(startInt*100 + 50); // x.50 floors
+          const start = startHund/100;
+
+          const upTenth  = pickTenth(20,120);      // 2.0–12.0, not an integer
+          const downHund = pickCents(50,600);      // 0.50–6.00, not an integer
+
+          const aAnsHund = startHund + (upTenth*10);
+          const bAnsHund = aAnsHund - downHund*4;
+
+          return mk([
+            partNumber(
+              "n9_3_c_s3a",
+              `<b>(a)</b> A lift is at a height of <b>${fmt(start,2)} m</b> relative to ground level.<br>`+
+              `It goes up <b>${(upTenth/10).toFixed(1)} m</b>.<br>`+
+              `Work out the new height. <span class="endmark">[1]</span>`,
+              1,
+              roundTo(aAnsHund/100,2)
+            ),
+            partNumber(
+              "n9_3_c_s3b",
+              `<b>(b)</b> Then it goes down <b>${(downHund/100).toFixed(2)} m</b>, repeated <b>4</b> times.<br>`+
+              `Work out the final height. <span class="endmark">[2]</span>`,
+              2,
+              roundTo(bAnsHund/100,2)
+            ),
+          ]);
+        }
       }
+
+      // =========================================================
+      // 4 MARK (3 scenarios; only scenario 1 is money) — TABLE INCLUDED
+      // (a) [1], (b) [3] — Part (b) does NOT state the numerical answer to part (a).
+      // =========================================================
       if(marksTotal===4){
-        const a=rng.int(-12,12), b=rng.int(-12,12), c=rng.int(2,8), d=rng.int(-9,9);
-        const ans = (a-b)*c + d;
-        return Q([partInteger("n9_4", `Work out: <b>(${a} − ${b}) × ${c} + (${d})</b>. <span class="endmark">[4]</span>`, 4, ans)]);
+        // Scenario 1 (Money) — Table
+        if(scenario===1){
+          if(!isCalc){
+            const salary = rng.int(80,200);
+            const rent   = -rng.int(40,120);
+            const food   = -rng.int(10,60);
+            const refund = rng.int(5,40);
+
+            const tx = [
+              {label:"Salary", value:salary, sentence:"Salary is paid in."},
+              {label:"Rent", value:rent, sentence:"Rent is paid."},
+              {label:"Food shop", value:food, sentence:"The food shop is paid."},
+              {label:"Refund", value:refund, sentence:"A refund is paid in."},
+            ];
+
+            const table =
+              `<table class="qtable">`+
+                `<tr><th>Transaction</th><th class="num">Amount</th></tr>`+
+                `<tr><td>Salary</td><td class="num">${fmtSignedMoneyInt(salary)}</td></tr>`+
+                `<tr><td>Rent</td><td class="num">${fmtSignedMoneyInt(rent)}</td></tr>`+
+                `<tr><td>Food shop</td><td class="num">${fmtSignedMoneyInt(food)}</td></tr>`+
+                `<tr><td>Refund</td><td class="num">${fmtSignedMoneyInt(refund)}</td></tr>`+
+              `</table>`;
+
+            let startBal = rng.int(-80,80);
+            while(startBal===0) startBal = rng.int(-80,80);
+
+            // (a) randomise the transaction used (ensure a negative number is involved)
+            let txA = rng.choice(tx);
+            if(startBal>0){
+              txA = rng.choice(tx.filter(t=>t.value<0));
+            }
+            const aAns = startBal + txA.value;
+
+            // (b) randomise which 3 transactions are used, and the order they happen in
+            const bTx = rng.shuffle(tx).slice(0,3);
+            const bAns = startBal + bTx.reduce((s,t)=>s+t.value,0);
+            const bLines = bTx.map((t,i)=> (i===0 ? `${t.sentence}<br>` : `Then ${t.sentence}<br>`)).join("");
+
+            return mk([
+              partMoney(
+                "n9_4_nc_s1a",
+                `A bank statement shows transactions.<br>${table}<br>`+
+                `<b>(a)</b> The account balance starts at <b>${fmtMoneyStartInt(startBal)}</b>.<br>`+
+                `${txA.sentence}<br>`+
+                `What is the new balance? <span class="endmark">[1]</span>`,
+                1,
+                aAns
+              ),
+              partMoney(
+                "n9_4_nc_s1b",
+                `<b>(b)</b> The account balance starts at <b>${fmtMoneyStartInt(startBal)}</b>.<br>`+
+                `${bLines}`+
+                `Work out the final balance. <span class="endmark">[3]</span>`,
+                3,
+                bAns
+              ),
+            ]);
+          }else{
+            const salaryP = pickCents(8000,20000);
+            const rentP   = -pickCents(4000,12000);
+            const foodP   = -pickCents(1000,6000);
+            const refundP = pickCents(500,4000);
+
+            const tx = [
+              {label:"Salary", value:salaryP, sentence:"Salary is paid in."},
+              {label:"Rent", value:rentP, sentence:"Rent is paid."},
+              {label:"Food shop", value:foodP, sentence:"The food shop is paid."},
+              {label:"Refund", value:refundP, sentence:"A refund is paid in."},
+            ];
+
+            const table =
+              `<table class="qtable">`+
+                `<tr><th>Transaction</th><th class="num">Amount</th></tr>`+
+                `<tr><td>Salary</td><td class="num">${fmtSignedMoney2dp(salaryP)}</td></tr>`+
+                `<tr><td>Rent</td><td class="num">${fmtSignedMoney2dp(rentP)}</td></tr>`+
+                `<tr><td>Food shop</td><td class="num">${fmtSignedMoney2dp(foodP)}</td></tr>`+
+                `<tr><td>Refund</td><td class="num">${fmtSignedMoney2dp(refundP)}</td></tr>`+
+              `</table>`;
+
+            const startAbsP = pickCents(500,9000);
+            const startP = rng.choice([-startAbsP, startAbsP]);
+
+            let txA = rng.choice(tx);
+            if(startP>0){
+              txA = rng.choice(tx.filter(t=>t.value<0));
+            }
+            const aAnsP = startP + txA.value;
+
+            const bTx = rng.shuffle(tx).slice(0,3);
+            const bAnsP = startP + bTx.reduce((s,t)=>s+t.value,0);
+            const bLines = bTx.map((t,i)=> (i===0 ? `${t.sentence}<br>` : `Then ${t.sentence}<br>`)).join("");
+
+            return mk([
+              partMoney(
+                "n9_4_c_s1a",
+                `A bank statement shows transactions.<br>${table}<br>`+
+                `<b>(a)</b> The account balance starts at <b>${fmtMoneyStart2dp(startP)}</b>.<br>`+
+                `${txA.sentence}<br>`+
+                `What is the new balance? <span class="endmark">[1]</span>`,
+                1,
+                roundTo(aAnsP/100,2)
+              ),
+              partMoney(
+                "n9_4_c_s1b",
+                `<b>(b)</b> The account balance starts at <b>${fmtMoneyStart2dp(startP)}</b>.<br>`+
+                `${bLines}`+
+                `Work out the final balance. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`,
+                3,
+                roundTo(bAnsP/100,2)
+              ),
+            ]);
+          }
+        }
+        // Scenario 2 (Temperature changes)
+        if(!isCalc){
+          const start     = -rng.int(6,20);
+          const morning   = rng.int(2,12);
+          const afternoon = -rng.int(2,12);
+          const evening   = -rng.int(1,9);
+          const overnight = rng.int(1,7);
+
+          const table =
+            `<table class="qtable">`+
+              `<tr><th>Change time</th><th class="num">Change</th></tr>`+
+              `<tr><td>Morning</td><td class="num">${fmtSignedInt(morning,"°C")}</td></tr>`+
+              `<tr><td>Afternoon</td><td class="num">${fmtSignedInt(afternoon,"°C")}</td></tr>`+
+              `<tr><td>Evening</td><td class="num">${fmtSignedInt(evening,"°C")}</td></tr>`+
+              `<tr><td>Overnight</td><td class="num">${fmtSignedInt(overnight,"°C")}</td></tr>`+
+            `</table>`;
+
+          const changes = [
+            {name:"morning", value:morning},
+            {name:"afternoon", value:afternoon},
+            {name:"evening", value:evening},
+            {name:"overnight", value:overnight},
+          ];
+
+          // Randomise which single change is used in (a)
+          const chA = rng.choice(changes);
+          const aAns = start + chA.value;
+
+          // Randomise the order the changes are referenced in (b)
+          const order = rng.shuffle(changes);
+          const bAns = start + changes.reduce((s,c)=>s+c.value,0);
+          const bLines = order.map((c,i)=> (i===0 ? `Apply the ${c.name} change.<br>` : `Then apply the ${c.name} change.<br>`)).join("");
+
+          return mk([
+            partInteger(
+              "n9_4_nc_s2a",
+              `A weather station records temperature changes.<br>${table}<br>`+
+              `<b>(a)</b> The temperature starts at <b>${start}°C</b>.<br>`+
+              `Apply the ${chA.name} change.<br>`+
+              `Work out the new temperature. <span class="endmark">[1]</span>`,
+              1,
+              aAns
+            ),
+            partInteger(
+              "n9_4_nc_s2b",
+              `<b>(b)</b> The temperature starts at <b>${start}°C</b>.<br>`+
+              `${bLines}`+
+              `Work out the final temperature. <span class="endmark">[3]</span>`,
+              3,
+              bAns
+            ),
+          ]);
+        } else {
+          const startHund     = -pickCents(300,1600);
+          const morningHund   = pickCents(200,1200);
+          const afternoonHund = -pickCents(150,1200);
+          const eveningHund   = -pickCents(100,900);
+          const overnightHund = pickCents(100,700);
+
+          const table =
+            `<table class="qtable">`+
+              `<tr><th>Change time</th><th class="num">Change</th></tr>`+
+              `<tr><td>Morning</td><td class="num">${fmtSigned2dp(morningHund,"°C")}</td></tr>`+
+              `<tr><td>Afternoon</td><td class="num">${fmtSigned2dp(afternoonHund,"°C")}</td></tr>`+
+              `<tr><td>Evening</td><td class="num">${fmtSigned2dp(eveningHund,"°C")}</td></tr>`+
+              `<tr><td>Overnight</td><td class="num">${fmtSigned2dp(overnightHund,"°C")}</td></tr>`+
+            `</table>`;
+
+          const changes = [
+            {name:"morning", value:morningHund},
+            {name:"afternoon", value:afternoonHund},
+            {name:"evening", value:eveningHund},
+            {name:"overnight", value:overnightHund},
+          ];
+
+          const chA = rng.choice(changes);
+          const aAnsHund = startHund + chA.value;
+
+          const order = rng.shuffle(changes);
+          const bAnsHund = startHund + changes.reduce((s,c)=>s+c.value,0);
+          const bLines = order.map((c,i)=> (i===0 ? `Apply the ${c.name} change.<br>` : `Then apply the ${c.name} change.<br>`)).join("");
+
+          return mk([
+            partNumber(
+              "n9_4_c_s2a",
+              `A weather station records temperature changes.<br>${table}<br>`+
+              `<b>(a)</b> The temperature starts at <b>${fmtNo00(startHund/100,2)}°C</b>.<br>`+
+              `Apply the ${chA.name} change.<br>`+
+              `Work out the new temperature. Give your answer to <b>2</b> decimal places. <span class="endmark">[1]</span>`,
+              1,
+              roundTo(aAnsHund/100,2)
+            ),
+            partNumber(
+              "n9_4_c_s2b",
+              `<b>(b)</b> The temperature starts at <b>${fmtNo00(startHund/100,2)}°C</b>.<br>`+
+              `${bLines}`+
+              `Work out the final temperature. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`,
+              3,
+              roundTo(bAnsHund/100,2)
+            ),
+          ]);
+        }
+// Scenario 3 (Level changes) — Table
+        if(!isCalc){
+          const start       = -rng.int(1,8);
+          const goDown      = -rng.int(2,6);
+          const goUp        = rng.int(3,9);
+          const goDownAgain = -rng.int(1,6);
+          const returnUp    = rng.int(2,8);
+
+          const table =
+            `<table class="qtable">`+
+              `<tr><th>Action</th><th class="num">Change in floors</th></tr>`+
+              `<tr><td>Go down</td><td class="num">${fmtSignedInt(goDown)}</td></tr>`+
+              `<tr><td>Go up</td><td class="num">${fmtSignedInt(goUp)}</td></tr>`+
+              `<tr><td>Go down again</td><td class="num">${fmtSignedInt(goDownAgain)}</td></tr>`+
+              `<tr><td>Return up</td><td class="num">${fmtSignedInt(returnUp)}</td></tr>`+
+            `</table>`;
+
+          const aAns = start + goDown;
+          const bAns = start + goDown + goUp + goDownAgain;
+
+          return mk([
+            partInteger(
+              "n9_4_nc_s3a",
+              `An engineer records level changes in a building.<br>${table}<br>`+
+              `<b>(a)</b> The engineer starts at floor <b>${start}</b>.<br>`+
+              `They go down.<br>`+
+              `What floor are they on now? <span class="endmark">[1]</span>`,
+              1,
+              aAns
+            ),
+            partInteger(
+              "n9_4_nc_s3b",
+              `<b>(b)</b> The engineer starts at floor <b>${start}</b>.<br>`+
+              `They go down.<br>`+
+              `Then they go up.<br>`+
+              `Then they go down again.<br>`+
+              `Work out the final floor. <span class="endmark">[3]</span>`,
+              3,
+              bAns
+            ),
+          ]);
+        } else {
+          const startTenth = pickTenth(10,60); // 1.0–6.0, not an integer
+          const startHund  = -startTenth*10;
+          const start      = startHund/100;
+
+          const goDownHund      = -pickCents(200,900);
+          const goUpHund        = pickCents(200,900);
+          const goDownAgainHund = -pickCents(100,700);
+          const returnUpHund    = pickCents(200,900);
+
+          const table =
+            `<table class="qtable">`+
+              `<tr><th>Action</th><th class="num">Change in metres</th></tr>`+
+              `<tr><td>Go down</td><td class="num">${fmtSigned2dp(goDownHund)}</td></tr>`+
+              `<tr><td>Go up</td><td class="num">${fmtSigned2dp(goUpHund)}</td></tr>`+
+              `<tr><td>Go down again</td><td class="num">${fmtSigned2dp(goDownAgainHund)}</td></tr>`+
+              `<tr><td>Return up</td><td class="num">${fmtSigned2dp(returnUpHund)}</td></tr>`+
+            `</table>`;
+
+          const aAnsHund = startHund + goDownHund;
+          const bAnsHund = startHund + goDownHund + goUpHund + goDownAgainHund;
+
+          return mk([
+            partNumber(
+              "n9_4_c_s3a",
+              `An engineer records level changes in a building.<br>${table}<br>`+
+              `<b>(a)</b> The engineer starts at a height of <b>${start.toFixed(1)} m</b> relative to ground level.<br>`+
+              `They go down.<br>`+
+              `What is the new height? <span class="endmark">[1]</span>`,
+              1,
+              roundTo(aAnsHund/100,2)
+            ),
+            partNumber(
+              "n9_4_c_s3b",
+              `<b>(b)</b> The engineer starts at a height of <b>${start.toFixed(1)} m</b> relative to ground level.<br>`+
+              `They go down.<br>`+
+              `Then they go up.<br>`+
+              `Then they go down again.<br>`+
+              `Work out the final height. <span class="endmark">[3]</span>`,
+              3,
+              roundTo(bAnsHund/100,2)
+            ),
+          ]);
+        }
       }
-      // 5 marks: two linked negative steps, mark structure
-      const start=rng.int(-50,50);
-      const change1=rng.int(-30,30);
-      const change2=rng.int(-30,30);
-      const final = start + change1 - change2;
-      return Q([
-        partInteger("n9_5a", `Start at <b>${start}</b>. Add <b>${change1}</b>. Work out the result <span class="endmark">[2]</span>`, 2, start+change1),
-        partInteger("n9_5b", `Now subtract <b>${change2}</b>. Work out the final result <span class="endmark">[3]</span>`, 3, final),
-      ]);
+
+      // =========================================================
+      // 5 MARK (3 scenarios; only scenario 1 is money) — TABLE INCLUDED
+      // (a) [2], (b) [3]
+      // =========================================================
+      if(marksTotal===5){
+        // Scenario 1 (Money) — Table
+        if(scenario===1){
+          if(!isCalc){
+            const startAbs = rng.int(5,40);
+            const start    = rng.choice([-startAbs, startAbs]);
+
+            const deposit  = rng.int(20,90);
+            const bill     = -rng.int(10,60);
+            const fee      = -rng.int(5,25);
+            const refund   = rng.int(5,30);
+
+            const tx = {
+              deposit:{label:"Deposit", value:deposit, first:"A deposit is paid in.", then:"a deposit is paid in."},
+              bill:{label:"Bill", value:bill, first:"A bill is paid.", then:"a bill is paid.", doubleFirst:"<b>2</b> bills are paid.", doubleThen:"<b>2</b> bills are paid."},
+              fee:{label:"Fee", value:fee, first:"A fee is taken.", then:"a fee is taken.", doubleFirst:"<b>2</b> fees are taken.", doubleThen:"<b>2</b> fees are taken."},
+              refund:{label:"Refund", value:refund, first:"A refund is paid in.", then:"a refund is paid in."},
+            };
+
+            const table =
+              `<table class="qtable">`+
+                `<tr><th>Transaction</th><th class="num">Amount</th></tr>`+
+                `<tr><td>Deposit</td><td class="num">${fmtSignedMoneyInt(deposit)}</td></tr>`+
+                `<tr><td>Bill</td><td class="num">${fmtSignedMoneyInt(bill)}</td></tr>`+
+                `<tr><td>Fee</td><td class="num">${fmtSignedMoneyInt(fee)}</td></tr>`+
+                `<tr><td>Refund</td><td class="num">${fmtSignedMoneyInt(refund)}</td></tr>`+
+              `</table>`;
+
+            const posKeys = ["deposit","refund"];
+            const negKeys = ["bill","fee"];
+
+            // (a) pick one positive and one negative transaction, and randomise the order they are mentioned
+            const posA = rng.choice(posKeys);
+            const negA = rng.choice(negKeys);
+            const aOrder = rng.shuffle([posA, negA]);
+
+            const aAns = start + tx[posA].value + tx[negA].value;
+            const aLines =
+              (aOrder[0]===posA || aOrder[0]===negA ? `${tx[aOrder[0]].first}<br>` : "") +
+              `Then ${tx[aOrder[1]].then}<br>`;
+
+            // (b) use both negative transaction types, and double one of them (varies the operations)
+            const negDouble = rng.choice(negKeys);
+            const negSingle = negKeys.find(k=>k!==negDouble);
+            const posB = rng.choice(posKeys);
+
+            const firstTwo = rng.shuffle([negSingle, posB]);
+            const bAns = aAns + tx[firstTwo[0]].value + tx[firstTwo[1]].value + 2*tx[negDouble].value;
+
+            const bLines =
+              `${tx[firstTwo[0]].first}<br>`+
+              `Then ${tx[firstTwo[1]].then}<br>`+
+              `Then ${tx[negDouble].doubleThen}<br>`;
+
+            return mk([
+              partMoney(
+                "n9_5_nc_s1a",
+                `A bank account has these transactions.<br>${table}<br>`+
+                `<b>(a)</b> The account balance starts at <b>${fmtMoneyStartInt(start)}</b>.<br>`+
+                `${tx[aOrder[0]].first}<br>`+
+                `Then ${tx[aOrder[1]].then}<br>`+
+                `Work out the new balance. <span class="endmark">[2]</span>`,
+                2,
+                aAns
+              ),
+              partMoney(
+                "n9_5_nc_s1b",
+                `<b>(b)</b> Start with your answer to part <b>(a)</b>.<br>`+
+                `${bLines}`+
+                `Work out the final balance. <span class="endmark">[3]</span>`,
+                3,
+                bAns
+              ),
+            ]);
+          }else{
+            const startAbsP = pickCents(500, 9000);
+            const startP    = rng.choice([-startAbsP, startAbsP]);
+
+            const depositP  = pickCents(2000, 9000);
+            const billP     = -pickCents(1000, 6000);
+            const feeP      = -pickCents(500, 2500);
+            const refundP   = pickCents(500, 3000);
+
+            const tx = {
+              deposit:{label:"Deposit", value:depositP, first:"A deposit is paid in.", then:"a deposit is paid in."},
+              bill:{label:"Bill", value:billP, first:"A bill is paid.", then:"a bill is paid.", doubleFirst:"<b>2</b> bills are paid.", doubleThen:"<b>2</b> bills are paid."},
+              fee:{label:"Fee", value:feeP, first:"A fee is taken.", then:"a fee is taken.", doubleFirst:"<b>2</b> fees are taken.", doubleThen:"<b>2</b> fees are taken."},
+              refund:{label:"Refund", value:refundP, first:"A refund is paid in.", then:"a refund is paid in."},
+            };
+
+            const table =
+              `<table class="qtable">`+
+                `<tr><th>Transaction</th><th class="num">Amount</th></tr>`+
+                `<tr><td>Deposit</td><td class="num">${fmtSignedMoney2dp(depositP)}</td></tr>`+
+                `<tr><td>Bill</td><td class="num">${fmtSignedMoney2dp(billP)}</td></tr>`+
+                `<tr><td>Fee</td><td class="num">${fmtSignedMoney2dp(feeP)}</td></tr>`+
+                `<tr><td>Refund</td><td class="num">${fmtSignedMoney2dp(refundP)}</td></tr>`+
+              `</table>`;
+
+            const posKeys = ["deposit","refund"];
+            const negKeys = ["bill","fee"];
+
+            const posA = rng.choice(posKeys);
+            const negA = rng.choice(negKeys);
+            const aOrder = rng.shuffle([posA, negA]);
+
+            const aAnsP = startP + tx[posA].value + tx[negA].value;
+
+            const negDouble = rng.choice(negKeys);
+            const negSingle = negKeys.find(k=>k!==negDouble);
+            const posB = rng.choice(posKeys);
+
+            const firstTwo = rng.shuffle([negSingle, posB]);
+            const bAnsP = aAnsP + tx[firstTwo[0]].value + tx[firstTwo[1]].value + 2*tx[negDouble].value;
+
+            const bLines =
+              `${tx[firstTwo[0]].first}<br>`+
+              `Then ${tx[firstTwo[1]].then}<br>`+
+              `Then ${tx[negDouble].doubleThen}<br>`;
+
+            return mk([
+              partMoney(
+                "n9_5_c_s1a",
+                `A bank account has these transactions.<br>${table}<br>`+
+                `<b>(a)</b> The account balance starts at <b>${fmtMoneyStart2dp(startP)}</b>.<br>`+
+                `${tx[aOrder[0]].first}<br>`+
+                `Then ${tx[aOrder[1]].then}<br>`+
+                `Work out the new balance. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`,
+                2,
+                roundTo(aAnsP/100,2)
+              ),
+              partMoney(
+                "n9_5_c_s1b",
+                `<b>(b)</b> Start with your answer to part <b>(a)</b>.<br>`+
+                `${bLines}`+
+                `Work out the final balance. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`,
+                3,
+                roundTo(bAnsP/100,2)
+              ),
+            ]);
+          }
+        }
+
+        // Scenario 2 (Temperature and repeated change) — Table
+if(scenario===2){
+          if(!isCalc){
+            const startTemp = -rng.int(6,20);
+            const heating   = rng.int(4,12);
+            const nightDrop = -rng.int(3,10);
+            const windDrop  = -rng.int(2,9);
+
+            const table =
+              `<table class="qtable">`+
+                `<tr><th>Item</th><th class="num">Value</th></tr>`+
+                `<tr><td>Start temperature</td><td class="num">${startTemp}°C</td></tr>`+
+                `<tr><td>Heating change</td><td class="num">${fmtSignedInt(heating,"°C")}</td></tr>`+
+                `<tr><td>Night drop</td><td class="num">${fmtSignedInt(nightDrop,"°C")}</td></tr>`+
+                `<tr><td>Wind chill drop</td><td class="num">${fmtSignedInt(windDrop,"°C")}</td></tr>`+
+              `</table>`;
+
+            const changes = [
+              {key:"heating", label:"heating change", value:heating},
+              {key:"night", label:"night drop", value:nightDrop},
+              {key:"wind", label:"wind chill drop", value:windDrop},
+            ];
+
+            // Randomise which two changes are used in (a) and their order
+            const aSteps = rng.shuffle(changes).slice(0,2);
+            const aAns = startTemp + aSteps[0].value + aSteps[1].value;
+
+            // Randomise which negative drop is repeated in (b)
+            const rep = rng.choice(changes.filter(c=>c.key!=="heating"));
+            const times = 4;
+            const bAns = aAns + rep.value*times;
+
+            return mk([
+              partInteger(
+                "n9_5_nc_s2a",
+                `A temperature log shows changes.<br>${table}<br>`+
+                `<b>(a)</b> Start at the start temperature.<br>`+
+                `Apply the ${aSteps[0].label}.<br>`+
+                `Then apply the ${aSteps[1].label}.<br>`+
+                `Work out the temperature. <span class="endmark">[2]</span>`,
+                2,
+                aAns
+              ),
+              partInteger(
+                "n9_5_nc_s2b",
+                `<b>(b)</b> Start from your answer to part <b>(a)</b>.<br>`+
+                `Apply the ${rep.label} <b>${times}</b> times.<br>`+
+                `Work out the final temperature. <span class="endmark">[3]</span>`,
+                3,
+                bAns
+              ),
+            ]);
+          }else{
+            const startHund = -pickCents(300,1600);
+            const heatingHund = pickCents(400,1200);
+            const nightHund = -pickCents(300,1000);
+            const windHund = -pickCents(200,900);
+
+            const table =
+              `<table class="qtable">`+
+                `<tr><th>Item</th><th class="num">Value</th></tr>`+
+                `<tr><td>Start temperature</td><td class="num">${fmtNo00(startHund/100,2)}°C</td></tr>`+
+                `<tr><td>Heating change</td><td class="num">${fmtSigned2dp(heatingHund,"°C")}</td></tr>`+
+                `<tr><td>Night drop</td><td class="num">${fmtSigned2dp(nightHund,"°C")}</td></tr>`+
+                `<tr><td>Wind chill drop</td><td class="num">${fmtSigned2dp(windHund,"°C")}</td></tr>`+
+              `</table>`;
+
+            const changes = [
+              {key:"heating", label:"heating change", value:heatingHund},
+              {key:"night", label:"night drop", value:nightHund},
+              {key:"wind", label:"wind chill drop", value:windHund},
+            ];
+
+            const aSteps = rng.shuffle(changes).slice(0,2);
+            const aAnsHund = startHund + aSteps[0].value + aSteps[1].value;
+
+            const rep = rng.choice(changes.filter(c=>c.key!=="heating"));
+            const times = 4;
+            const bAnsHund = aAnsHund + rep.value*times;
+
+            return mk([
+              partNumber(
+                "n9_5_c_s2a",
+                `A temperature log shows changes.<br>${table}<br>`+
+                `<b>(a)</b> Start at the start temperature.<br>`+
+                `Apply the ${aSteps[0].label}.<br>`+
+                `Then apply the ${aSteps[1].label}.<br>`+
+                `Work out the temperature. <span class="endmark">[2]</span>`,
+                2,
+                roundTo(aAnsHund/100,2)
+              ),
+              partNumber(
+                "n9_5_c_s2b",
+                `<b>(b)</b> Start from your answer to part <b>(a)</b>.<br>`+
+                `Apply the ${rep.label} <b>${times}</b> times.<br>`+
+                `Work out the final temperature. <span class="endmark">[3]</span>`,
+                3,
+                roundTo(bAnsHund/100,2)
+              ),
+            ]);
+          }
+        }
+
+        // Scenario 3 (Location: altitude changes over days) — Table
+        if(!isCalc){
+          // Two positive and two negative daily changes (whole numbers)
+          const days = ["Monday","Tuesday","Wednesday","Thursday"];
+          const mags = [
+            rng.int(5,25),
+            rng.int(5,30),
+            rng.int(3,20),
+            rng.int(4,22),
+          ];
+          const signs = rng.shuffle([-1,-1,1,1]);
+
+          const change = {
+            "Monday":    signs[0]*mags[0],
+            "Tuesday":   signs[1]*mags[1],
+            "Wednesday": signs[2]*mags[2],
+            "Thursday":  signs[3]*mags[3],
+          };
+
+          const table =
+            `<table class="qtable">`+
+              `<tr><th>Day</th><th class="num">Change in altitude</th></tr>`+
+              `<tr><td>Monday</td><td class="num">${fmtSignedInt(change["Monday"]," m")}</td></tr>`+
+              `<tr><td>Tuesday</td><td class="num">${fmtSignedInt(change["Tuesday"]," m")}</td></tr>`+
+              `<tr><td>Wednesday</td><td class="num">${fmtSignedInt(change["Wednesday"]," m")}</td></tr>`+
+              `<tr><td>Thursday</td><td class="num">${fmtSignedInt(change["Thursday"]," m")}</td></tr>`+
+            `</table>`;
+
+          // Start altitude is non-zero
+          let start = rng.int(-250,250);
+          while(start===0) start = rng.int(-250,250);
+
+          // Ensure BOTH parts use one negative and one positive day
+          const negDays = days.filter(d=>change[d]<0);
+          const posDays = days.filter(d=>change[d]>0);
+
+          const aNeg = rng.choice(negDays);
+          const aPos = rng.choice(posDays);
+          const aDays = rng.shuffle([aNeg, aPos]);
+
+          const bNeg = negDays.find(d=>d!==aNeg);
+          const bPos = posDays.find(d=>d!==aPos);
+          const bDays = rng.shuffle([bNeg, bPos]);
+
+          const aAns = start + change[aDays[0]] + change[aDays[1]];
+
+          // Vary the operations in (b): sometimes one day is doubled, and the final adjustment can be + or -
+          const adjust = rng.int(3,25);
+          const adjustOp = rng.choice(["add","subtract"]);
+          const adjustSigned = (adjustOp==="add") ? adjust : -adjust;
+
+          const useDouble = rng.choice([true,false]);
+          let bAns, bInstr;
+          if(useDouble){
+            const dblDay = rng.choice(bDays);
+            const otherDay = bDays.find(d=>d!==dblDay);
+            bAns = aAns + change[otherDay] + 2*change[dblDay] + adjustSigned;
+            bInstr =
+              `Add ${otherDay}.<br>`+
+              `Then add <b>double</b> ${dblDay}.<br>`+
+              `Then ${adjustOp} <b>${adjust} m</b> (an extra change).<br>`;
+          }else{
+            bAns = aAns + change[bDays[0]] + change[bDays[1]] + adjustSigned;
+            bInstr =
+              `Add ${bDays[0]} and ${bDays[1]}.<br>`+
+              `Then ${adjustOp} <b>${adjust} m</b> (an extra change).<br>`;
+          }
+
+          return mk([
+            partInteger(
+              "n9_5_nc_s3a",
+              `A hiker records changes in altitude each day.<br>${table}<br>`+
+              `<b>(a)</b> The altitude starts at <b>${start} m</b>.<br>`+
+              `Add ${aDays[0]} and ${aDays[1]}.<br>`+
+              `Work out the altitude. <span class="endmark">[2]</span>`,
+              2,
+              aAns
+            ),
+            partInteger(
+              "n9_5_nc_s3b",
+              `<b>(b)</b> Start from your answer to part <b>(a)</b>.<br>`+
+              `${bInstr}`+
+              `Work out the final altitude. <span class="endmark">[3]</span>`,
+              3,
+              bAns
+            ),
+          ]);
+        } else {
+          // calculator version: hundredths of a metre (2 dp)
+          const days = ["Monday","Tuesday","Wednesday","Thursday"];
+
+          const mags = [
+            pickCents(500, 2500),
+            pickCents(500, 3000),
+            pickCents(300, 2000),
+            pickCents(400, 2200),
+          ];
+          const signs = rng.shuffle([-1,-1,1,1]);
+
+          const changeP = {
+            "Monday":    signs[0]*mags[0],
+            "Tuesday":   signs[1]*mags[1],
+            "Wednesday": signs[2]*mags[2],
+            "Thursday":  signs[3]*mags[3],
+          };
+
+          const table =
+            `<table class="qtable">`+
+              `<tr><th>Day</th><th class="num">Change in altitude</th></tr>`+
+              `<tr><td>Monday</td><td class="num">${fmtSigned2dp(changeP["Monday"]," m")}</td></tr>`+
+              `<tr><td>Tuesday</td><td class="num">${fmtSigned2dp(changeP["Tuesday"]," m")}</td></tr>`+
+              `<tr><td>Wednesday</td><td class="num">${fmtSigned2dp(changeP["Wednesday"]," m")}</td></tr>`+
+              `<tr><td>Thursday</td><td class="num">${fmtSigned2dp(changeP["Thursday"]," m")}</td></tr>`+
+            `</table>`;
+
+          const startAbsP = pickCents(500, 20000);
+          const startP = rng.choice([-startAbsP, startAbsP]);
+
+          const negDays = days.filter(d=>changeP[d]<0);
+          const posDays = days.filter(d=>changeP[d]>0);
+
+          const aNeg = rng.choice(negDays);
+          const aPos = rng.choice(posDays);
+          const aDays = rng.shuffle([aNeg, aPos]);
+
+          const bNeg = negDays.find(d=>d!==aNeg);
+          const bPos = posDays.find(d=>d!==aPos);
+          const bDays = rng.shuffle([bNeg, bPos]);
+
+          const aAnsP = startP + changeP[aDays[0]] + changeP[aDays[1]];
+
+          const adjustP = pickCents(200, 4000);
+          const adjustOp = rng.choice(["add","subtract"]);
+          const adjustSignedP = (adjustOp==="add") ? adjustP : -adjustP;
+
+          const useDouble = rng.choice([true,false]);
+          let bAnsP, bInstr;
+          if(useDouble){
+            const dblDay = rng.choice(bDays);
+            const otherDay = bDays.find(d=>d!==dblDay);
+
+            const multOpts = [
+              {m:2, word:"double"},
+              {m:3, word:"triple"},
+              {m:4, word:"quadruple"},
+              {m:5, word:"five times"},
+            ];
+            const mult = rng.choice(multOpts);
+
+            bAnsP = aAnsP + changeP[otherDay] + mult.m*changeP[dblDay] + adjustSignedP;
+            bInstr =
+              `Add ${otherDay}.<br>`+
+              `Then add <b>${mult.word}</b> ${dblDay}.<br>`+
+              `Then ${adjustOp} <b>${(adjustP/100).toFixed(2)} m</b> (an extra change).<br>`;
+          }else{
+            bAnsP = aAnsP + changeP[bDays[0]] + changeP[bDays[1]] + adjustSignedP;
+            bInstr =
+              `Add ${bDays[0]} and ${bDays[1]}.<br>`+
+              `Then ${adjustOp} <b>${(adjustP/100).toFixed(2)} m</b> (an extra change).<br>`;
+          }
+
+
+          return mk([
+            partNumber(
+              "n9_5_c_s3a",
+              `A hiker records changes in altitude each day.<br>${table}<br>`+
+              `<b>(a)</b> The altitude starts at <b>${(startP/100).toFixed(2)} m</b>.<br>`+
+              `Add ${aDays[0]} and ${aDays[1]}.<br>`+
+              `Work out the altitude. Give your answer to <b>2</b> decimal places. <span class="endmark">[2]</span>`,
+              2,
+              roundTo(aAnsP/100,2)
+            ),
+            partNumber(
+              "n9_5_c_s3b",
+              `<b>(b)</b> Start from your answer to part <b>(a)</b>.<br>`+
+              `${bInstr}`+
+              `Work out the final altitude. Give your answer to <b>2</b> decimal places. <span class="endmark">[3]</span>`,
+              3,
+              roundTo(bAnsP/100,2)
+            ),
+          ]);
+        }
+      }
+
+      // Shouldn't be needed
+      return mk([partInteger("n9_fallback", `Work out: <b>-5 + 8</b>. <span class="endmark">[1]</span>`, 1, 3)]);
     }
     /* SPLITMERGE:BUILDQUESTION-CASES-END */
 
@@ -2396,6 +3838,11 @@ function renderInput(input, answerType, baseId, partTextHtml){
     // Common phrasing
     if(/km\s+per\s+hour/i.test(t)) return "km/h";
 
+    // Topic-specific and symbol-based units (avoid false placeholders)
+    if(/°\s*C/i.test(t) || /\btemperature\b/i.test(t)) return "°C";
+    if(/\bfloors?\b/i.test(t) || /\bfloor\b/i.test(t)) return "floor";
+    if(/\bsweets?\b/i.test(t)) return "sweets";
+
     // "How many ___" often names the unit directly
     m = t.match(/how many\s+([^?\.]+?)(?=\s+(?:are|is|does|do|can|were|was|will|could|should|would)\b|[?\.])/i);
     if(m && m[1]) return m[1].trim();
@@ -2435,6 +3882,7 @@ function renderInput(input, answerType, baseId, partTextHtml){
 
     for(const c of candidates){
       const idx = lastMatchIndex(t, c.re);
+      if(idx < 0) continue;
       if(idx > bestIdx || (idx === bestIdx && c.u.length > bestU.length)){
         bestIdx = idx;
         bestU = c.u;
